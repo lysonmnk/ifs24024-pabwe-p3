@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100" fill="none" role="img" aria-label="HyperLink Logo">
+  <defs>
+    <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1d4ed8" />
+      <stop offset="100%" stop-color="#0284c7" />
+    </linearGradient>
+    <linearGradient id="grad2" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#3b82f6" />
+      <stop offset="100%" stop-color="#10b981" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Outer Neural Hexagon Frame -->
+  <polygon points="50,6 88,28 88,72 50,94 12,72 12,28" 
+           stroke="url(#grad1)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.5"/>
+           
+  <!-- Core AI Nucleus Nodes -->
+  <circle cx="50" cy="50" r="14" fill="url(#grad1)" />
+  <circle cx="50" cy="22" r="6" fill="#1d4ed8" />
+  <circle cx="75" cy="36" r="6" fill="#0284c7" />
+  <circle cx="75" cy="64" r="6" fill="#0ea5e9" />
+  <circle cx="50" cy="78" r="6" fill="#3b82f6" />
+  <circle cx="25" cy="64" r="6" fill="#0284c7" />
+  <circle cx="25" cy="36" r="6" fill="#1d4ed8" />
+  
+  <!-- Neural Connections / HyperLink Synapses -->
+  <line x1="50" y1="50" x2="50" y2="22" stroke="url(#grad1)" stroke-width="2.5" />
+  <line x1="50" y1="50" x2="75" y2="36" stroke="url(#grad1)" stroke-width="2.5" />
+  <line x1="50" y1="50" x2="75" y2="64" stroke="url(#grad1)" stroke-width="2.5" />
+  <line x1="50" y1="50" x2="50" y2="78" stroke="url(#grad1)" stroke-width="2.5" />
+  <line x1="50" y1="50" x2="25" y2="64" stroke="url(#grad1)" stroke-width="2.5" />
+  <line x1="50" y1="50" x2="25" y2="36" stroke="url(#grad1)" stroke-width="2.5" />
+
+  <!-- Outer Ring Interconnections -->
+  <line x1="50" y1="22" x2="75" y2="36" stroke="url(#grad2)" stroke-width="1.8" opacity="0.6" />
+  <line x1="75" y1="36" x2="75" y2="64" stroke="url(#grad2)" stroke-width="1.8" opacity="0.6" />
+  <line x1="75" y1="64" x2="50" y2="78" stroke="url(#grad2)" stroke-width="1.8" opacity="0.6" />
+  <line x1="50" y1="78" x2="25" y2="64" stroke="url(#grad2)" stroke-width="1.8" opacity="0.6" />
+  <line x1="25" y1="64" x2="25" y2="36" stroke="url(#grad2)" stroke-width="1.8" opacity="0.6" />
+  <line x1="25" y1="36" x2="50" y2="22" stroke="url(#grad2)" stroke-width="1.8" opacity="0.6" />
+
+  <!-- Center Core Spark -->
+  <circle cx="50" cy="50" r="5" fill="#ffffff" />
+</svg>

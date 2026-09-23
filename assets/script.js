@@ -75,7 +75,6 @@ function escapeHtml(str) {
 function isValidHttpUrl(urlString) {
   if (!urlString || typeof urlString !== 'string') return false;
   const trimmed = urlString.trim();
-  // Regex memvalidasi diawali http:// atau https:// diikuti domain yang valid
   const urlRegex = /^https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+$/i;
   if (!urlRegex.test(trimmed)) return false;
 
@@ -117,7 +116,7 @@ function setStorage(key, value) {
 }
 
 // =============================================================================
-// 2. TAB ROUTER (QUERY STRING MANAGEMENT)
+// 2. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA)
 // =============================================================================
 
 const STORAGE_KEYS = {
@@ -161,16 +160,17 @@ function switchTab(targetTab, pushHistory = false) {
     activePanel.classList.remove('hidden');
   }
 
-  // Update styling tombol navigasi tab
+  // Update styling tombol navigasi tab dengan role="tab" dan aria-selected
   document.querySelectorAll('.tab-btn').forEach(btn => {
     const tabName = btn.dataset.tab;
     const isCurrent = tabName === safeTab;
+    btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
 
     if (isCurrent) {
-      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5 bg-white text-indigo-600 shadow-sm border border-slate-200/80';
+      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm border border-slate-200';
     } else {
-      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900 hover:bg-slate-200/50';
+      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200/60';
     }
   });
 
@@ -316,11 +316,11 @@ function updateExpenseSummary() {
   expenseTotalExpenseDisplay.textContent = formatRupiah(totalExpense);
   expenseBalanceDisplay.textContent = formatRupiah(balance);
 
-  // Pewarnaan saldo
+  // Pewarnaan saldo dengan rasio kontras tinggi (> 7:1)
   if (balance < 0) {
-    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-rose-600 mt-3 truncate tracking-tight';
+    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-rose-800 mt-3 truncate tracking-tight';
   } else if (balance > 0) {
-    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-3 truncate tracking-tight';
+    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-emerald-800 mt-3 truncate tracking-tight';
   } else {
     expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 truncate tracking-tight';
   }
@@ -337,11 +337,9 @@ function getFilteredAndSortedExpenses() {
 
   // 1. Filter
   let result = expenses.filter(item => {
-    // Filter tipe
     if (filterType !== 'all' && item.type !== filterType) {
       return false;
     }
-    // Search judul atau kategori
     if (searchQuery) {
       const matchTitle = (item.title || '').toLowerCase().includes(searchQuery);
       const matchCat = (item.category || '').toLowerCase().includes(searchQuery);
@@ -370,7 +368,7 @@ function getFilteredAndSortedExpenses() {
 }
 
 /**
- * Merender daftar transaksi ke DOM
+ * Merender daftar transaksi ke DOM dengan kontras warna WCAG AA
  */
 function renderExpenses() {
   updateExpenseSummary();
@@ -389,49 +387,50 @@ function renderExpenses() {
   list.forEach(item => {
     const isIncome = item.type === 'income';
     const row = document.createElement('div');
-    row.className = 'p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50/80 transition-colors gap-3';
+    row.className = 'p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition-colors gap-3';
 
-    const iconBg = isIncome ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600';
+    // Warna dengan kontras > 4.5:1 untuk teks dan > 3:1 untuk latar grafis
+    const iconBg = isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
     const iconClass = isIncome ? 'ti-arrow-up-right' : 'ti-arrow-down-left';
-    const amountColor = isIncome ? 'text-emerald-600' : 'text-rose-600';
+    const amountColor = isIncome ? 'text-emerald-800' : 'text-rose-800';
     const prefixSign = isIncome ? '+ ' : '- ';
 
     row.innerHTML = `
       <div class="flex items-center gap-3 sm:gap-4 min-w-0">
         <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-xl ${iconBg} flex items-center justify-center shrink-0 text-xl font-bold">
-          <i class="ti ${iconClass}"></i>
+          <i class="ti ${iconClass}" aria-hidden="true"></i>
         </div>
         <div class="min-w-0">
-          <h5 class="text-sm sm:text-base font-bold text-slate-800 truncate">${escapeHtml(item.title)}</h5>
-          <div class="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-slate-400 font-medium">
-            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 font-semibold text-[11px]">${escapeHtml(item.category)}</span>
-            <span>&bull;</span>
-            <span><i class="ti ti-calendar mr-1"></i>${formatDateIndo(item.date)}</span>
+          <h5 class="text-sm sm:text-base font-bold text-slate-900 truncate">${escapeHtml(item.title)}</h5>
+          <div class="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-slate-700 font-semibold">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 text-slate-800 font-bold text-xs">${escapeHtml(item.category)}</span>
+            <span aria-hidden="true">&bull;</span>
+            <span class="flex items-center"><i class="ti ti-calendar mr-1 text-slate-600" aria-hidden="true"></i>${formatDateIndo(item.date)}</span>
           </div>
         </div>
       </div>
 
       <div class="flex items-center gap-3 sm:gap-4 shrink-0">
         <div class="text-right">
-          <div class="text-sm sm:text-base font-bold ${amountColor} tracking-tight">${prefixSign}${formatRupiah(item.amount)}</div>
-          <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">${isIncome ? 'Pemasukan' : 'Pengeluaran'}</span>
+          <div class="text-sm sm:text-base font-extrabold ${amountColor} tracking-tight">${prefixSign}${formatRupiah(item.amount)}</div>
+          <span class="text-xs uppercase font-bold text-slate-700 tracking-wider">${isIncome ? 'Pemasukan' : 'Pengeluaran'}</span>
         </div>
         <div class="flex items-center gap-1">
           <button type="button" 
                   data-action="edit-expense" 
                   data-id="${item.id}" 
-                  class="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
-                  title="Ubah Transaksi"
-                  aria-label="Ubah Transaksi">
-            <i class="ti ti-edit text-base pointer-events-none"></i>
+                  class="p-2 text-slate-700 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors" 
+                  title="Ubah Transaksi ${escapeHtml(item.title)}"
+                  aria-label="Ubah Transaksi ${escapeHtml(item.title)}">
+            <i class="ti ti-edit text-base pointer-events-none" aria-hidden="true"></i>
           </button>
           <button type="button" 
                   data-action="delete-expense" 
                   data-id="${item.id}" 
-                  class="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" 
-                  title="Hapus Transaksi"
-                  aria-label="Hapus Transaksi">
-            <i class="ti ti-trash text-base pointer-events-none"></i>
+                  class="p-2 text-slate-700 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors" 
+                  title="Hapus Transaksi ${escapeHtml(item.title)}"
+                  aria-label="Hapus Transaksi ${escapeHtml(item.title)}">
+            <i class="ti ti-trash text-base pointer-events-none" aria-hidden="true"></i>
           </button>
         </div>
       </div>
@@ -448,7 +447,6 @@ function renderExpenses() {
 function validateExpenseForm() {
   let isValid = true;
 
-  // Title validation
   const titleVal = expenseInputTitle.value.trim();
   if (!titleVal) {
     expenseErrorTitle.textContent = 'Judul transaksi wajib diisi.';
@@ -458,7 +456,6 @@ function validateExpenseForm() {
     expenseErrorTitle.classList.add('hidden');
   }
 
-  // Amount validation (angka > 0)
   const amountVal = Number(expenseInputAmount.value);
   if (!expenseInputAmount.value || isNaN(amountVal) || amountVal <= 0) {
     expenseErrorAmount.textContent = 'Nominal harus berupa angka lebih besar dari 0.';
@@ -468,7 +465,6 @@ function validateExpenseForm() {
     expenseErrorAmount.classList.add('hidden');
   }
 
-  // Date validation
   if (!expenseInputDate.value) {
     expenseErrorDate.textContent = 'Tanggal transaksi wajib dipilih.';
     expenseErrorDate.classList.remove('hidden');
@@ -530,7 +526,6 @@ function openEditExpenseModal(id) {
   const typeRadio = document.querySelector(`input[name="edit-expense-type"][value="${item.type}"]`);
   if (typeRadio) typeRadio.checked = true;
 
-  // Bersihkan pesan error sebelumnya
   editExpenseErrorTitle.classList.add('hidden');
   editExpenseErrorAmount.classList.add('hidden');
   editExpenseErrorDate.classList.add('hidden');
@@ -718,7 +713,7 @@ function getFilteredAndSortedBookmarks() {
 }
 
 /**
- * Merender daftar kartu bookmark ke DOM
+ * Merender daftar kartu bookmark ke DOM dengan kontras warna tinggi
  */
 function renderBookmarks() {
   const list = getFilteredAndSortedBookmarks();
@@ -734,59 +729,60 @@ function renderBookmarks() {
 
   list.forEach(item => {
     const card = document.createElement('div');
-    card.className = 'bg-white rounded-2xl p-5 border border-slate-200/90 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between';
+    card.className = 'bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between';
 
     card.innerHTML = `
       <div class="space-y-3">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-2.5 min-w-0">
-            <div class="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
-              <i class="ti ti-bookmark text-lg"></i>
+            <div class="w-9 h-9 rounded-xl bg-indigo-100 text-indigo-800 flex items-center justify-center shrink-0">
+              <i class="ti ti-bookmark text-lg" aria-hidden="true"></i>
             </div>
             <div class="min-w-0">
               <h5 class="text-sm font-bold text-slate-900 truncate" title="${escapeHtml(item.title)}">${escapeHtml(item.title)}</h5>
-              <span class="inline-block text-[11px] font-semibold text-indigo-600 bg-indigo-50/80 px-2 py-0.5 rounded-md mt-0.5">${escapeHtml(item.category)}</span>
+              <span class="inline-block text-xs font-bold text-indigo-900 bg-indigo-100 px-2 py-0.5 rounded-md mt-0.5">${escapeHtml(item.category)}</span>
             </div>
           </div>
           <div class="flex items-center gap-1 shrink-0">
             <button type="button" 
                     data-action="edit-bookmark" 
                     data-id="${item.id}" 
-                    class="p-1.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors" 
-                    title="Ubah Bookmark"
-                    aria-label="Ubah Bookmark">
-              <i class="ti ti-edit text-base pointer-events-none"></i>
+                    class="p-1.5 text-slate-700 hover:text-indigo-800 hover:bg-indigo-50 rounded-lg transition-colors" 
+                    title="Ubah Bookmark ${escapeHtml(item.title)}"
+                    aria-label="Ubah Bookmark ${escapeHtml(item.title)}">
+              <i class="ti ti-edit text-base pointer-events-none" aria-hidden="true"></i>
             </button>
             <button type="button" 
                     data-action="delete-bookmark" 
                     data-id="${item.id}" 
-                    class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors" 
-                    title="Hapus Bookmark"
-                    aria-label="Hapus Bookmark">
-              <i class="ti ti-trash text-base pointer-events-none"></i>
+                    class="p-1.5 text-slate-700 hover:text-rose-800 hover:bg-rose-50 rounded-lg transition-colors" 
+                    title="Hapus Bookmark ${escapeHtml(item.title)}"
+                    aria-label="Hapus Bookmark ${escapeHtml(item.title)}">
+              <i class="ti ti-trash text-base pointer-events-none" aria-hidden="true"></i>
             </button>
           </div>
         </div>
 
         <!-- URL Preview -->
-        <div class="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-100 flex items-center gap-2 overflow-hidden">
-          <i class="ti ti-link text-xs text-slate-400 shrink-0"></i>
-          <span class="text-xs text-slate-500 font-mono truncate">${escapeHtml(item.url)}</span>
+        <div class="bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-2 overflow-hidden">
+          <i class="ti ti-link text-xs text-slate-600 shrink-0" aria-hidden="true"></i>
+          <span class="text-xs text-slate-800 font-mono font-medium truncate">${escapeHtml(item.url)}</span>
         </div>
 
         <!-- Catatan -->
-        ${item.note ? `<p class="text-xs text-slate-500 line-clamp-2 italic">"${escapeHtml(item.note)}"</p>` : ''}
+        ${item.note ? `<p class="text-xs text-slate-700 line-clamp-2 italic">"${escapeHtml(item.note)}"</p>` : ''}
       </div>
 
       <!-- Action Button: Open in new tab securely -->
       <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-        <span class="text-[11px] text-slate-400 font-medium">Ditambahkan: ${formatDateIndo(getTodayDateString())}</span>
+        <span class="text-xs text-slate-700 font-semibold">Tersimpan</span>
         <a href="${escapeHtml(item.url)}" 
            target="_blank" 
            rel="noopener noreferrer" 
-           class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50/60 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors">
+           aria-label="Kunjungi website ${escapeHtml(item.title)} di tab baru"
+           class="inline-flex items-center gap-1.5 text-xs font-bold text-indigo-900 hover:text-indigo-950 bg-indigo-100 hover:bg-indigo-200 px-3 py-1.5 rounded-lg transition-colors">
           <span>Kunjungi</span>
-          <i class="ti ti-external-link text-sm"></i>
+          <i class="ti ti-external-link text-sm" aria-hidden="true"></i>
         </a>
       </div>
     `;
@@ -1121,17 +1117,17 @@ function renderCurrentQuestion() {
   question.options.forEach((optText, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border border-slate-200 bg-slate-50 hover:bg-indigo-50/60 hover:border-indigo-300 font-medium text-sm text-slate-800 transition duration-150 flex items-center justify-between group';
+    btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border border-slate-300 bg-slate-50 hover:bg-indigo-100 hover:border-indigo-400 font-bold text-sm text-slate-900 transition duration-150 flex items-center justify-between group';
     btn.dataset.index = index;
 
     btn.innerHTML = `
       <div class="flex items-center gap-3">
-        <span class="w-7 h-7 rounded-xl bg-white border border-slate-200 group-hover:border-indigo-400 text-slate-500 font-bold text-xs flex items-center justify-center shrink-0">
+        <span class="w-7 h-7 rounded-xl bg-white border border-slate-300 group-hover:border-indigo-600 text-slate-800 font-bold text-xs flex items-center justify-center shrink-0">
           ${String.fromCharCode(65 + index)}
         </span>
-        <span>${escapeHtml(optText)}</span>
+        <span class="text-slate-900">${escapeHtml(optText)}</span>
       </div>
-      <i class="quiz-option-icon ti text-lg opacity-0 transition-opacity"></i>
+      <i class="quiz-option-icon ti text-lg opacity-0 transition-opacity" aria-hidden="true"></i>
     `;
 
     quizOptionsContainer.appendChild(btn);
@@ -1160,38 +1156,37 @@ function handleSelectAnswer(selectedIndex) {
   allOptionBtns.forEach((btn) => {
     const idx = Number(btn.dataset.index);
     btn.disabled = true;
-    btn.classList.remove('hover:bg-indigo-50/60', 'hover:border-indigo-300', 'cursor-pointer');
+    btn.classList.remove('hover:bg-indigo-100', 'hover:border-indigo-400', 'cursor-pointer');
     btn.classList.add('cursor-default');
 
     const icon = btn.querySelector('.quiz-option-icon');
 
     if (idx === currentQ.answer) {
-      // Jawaban benar (hijau)
-      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-emerald-900 font-bold text-sm flex items-center justify-between';
+      // Jawaban benar (hijau kontras tinggi)
+      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-emerald-700 bg-emerald-100 text-emerald-950 font-bold text-sm flex items-center justify-between';
       if (icon) {
-        icon.className = 'quiz-option-icon ti ti-check text-emerald-600 text-xl opacity-100';
+        icon.className = 'quiz-option-icon ti ti-check text-emerald-800 text-xl opacity-100';
       }
     } else if (idx === selectedIndex && !isCorrect) {
-      // Jawaban salah yang dipilih (merah)
-      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-rose-500 bg-rose-50 text-rose-900 font-medium text-sm flex items-center justify-between';
+      // Jawaban salah yang dipilih (merah kontras tinggi)
+      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-rose-700 bg-rose-100 text-rose-950 font-bold text-sm flex items-center justify-between';
       if (icon) {
-        icon.className = 'quiz-option-icon ti ti-x text-rose-600 text-xl opacity-100';
+        icon.className = 'quiz-option-icon ti ti-x text-rose-800 text-xl opacity-100';
       }
     } else {
-      // Pilihan lainnya
-      btn.classList.add('opacity-50');
+      btn.classList.add('opacity-60');
     }
   });
 
   // Tampilkan feedback banner
   quizFeedbackBanner.classList.remove('hidden');
   if (isCorrect) {
-    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-emerald-200 bg-emerald-50/80 text-emerald-900 transition-all';
-    quizFeedbackIcon.className = 'ti ti-circle-check text-2xl text-emerald-600 mt-0.5';
+    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-emerald-300 bg-emerald-100 text-emerald-950 transition-all';
+    quizFeedbackIcon.className = 'ti ti-circle-check text-2xl text-emerald-800 mt-0.5';
     quizFeedbackTitle.textContent = 'Jawaban Benar! (+20 Poin)';
   } else {
-    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-rose-200 bg-rose-50/80 text-rose-900 transition-all';
-    quizFeedbackIcon.className = 'ti ti-alert-circle text-2xl text-rose-600 mt-0.5';
+    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-rose-300 bg-rose-100 text-rose-950 transition-all';
+    quizFeedbackIcon.className = 'ti ti-alert-circle text-2xl text-rose-800 mt-0.5';
     quizFeedbackTitle.textContent = 'Jawaban Kurang Tepat';
   }
   quizFeedbackMessage.textContent = currentQ.explanation;
