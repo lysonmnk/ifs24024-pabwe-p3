@@ -225,6 +225,7 @@ Fitur kuis interaktif dengan skor.
 
 ## ✅ Checklist Fitur
 
+<<<<<<< HEAD
 - [x] Tab Expense, Bookmark, Quiz berfungsi dan hanya satu panel aktif
 - [x] Tab aktif tersimpan di query URL (`?tab=...`), bukan localStorage
 - [x] Expense Tracker: CRUD, ringkasan saldo, cari/filter/sort, validasi jumlah, modal ubah/hapus
@@ -233,6 +234,16 @@ Fitur kuis interaktif dengan skor.
 - [x] Key localStorage terpisah untuk tiap fitur
 - [x] Logika JS sepenuhnya di `assets/script.js`, tanpa `onclick` inline
 - [x] Kode dikomentari per bagian & responsive di semua ukuran layar
+=======
+- [ ] Tab Expense, Bookmark, Quiz berfungsi dan hanya satu panel aktif
+- [ ] Tab aktif tersimpan di query URL (`?tab=...`), bukan localStorage
+- [ ] Expense Tracker: CRUD, ringkasan saldo, cari/filter/sort, validasi jumlah, modal ubah/hapus
+- [ ] Bookmark Manager: validasi URL http/https, buka tab baru aman (`noopener noreferrer`), cari/sort, CRUD modal
+- [ ] Quiz App: ≥5 soal (array of object), alur mulai→jawab→feedback→skor, high score localStorage, bisa diulang
+- [ ] Key localStorage terpisah untuk tiap fitur
+- [ ] Logika JS sepenuhnya di `assets/script.js`, tanpa `onclick` inline
+- [ ] Kode dikomentari per bagian & responsive di semua ukuran layar
+>>>>>>> 5911fd35d9cce0351a2b42ed002ae29c9e5f0be3
 
 ---
 
