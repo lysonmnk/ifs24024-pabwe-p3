@@ -1,0 +1,772 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Praktikum 3 — JavaScript (Studi Kasus)</title>
+  
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Tabler Icons Webfont -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
+  
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            }
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+  <!-- Header & Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <!-- Logo / Brand Title -->
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100">
+            <i class="ti ti-brand-javascript text-2xl font-bold"></i>
+          </div>
+          <div>
+            <h1 class="text-base sm:text-lg font-bold text-slate-900 tracking-tight leading-tight">Praktikum 3 — JS</h1>
+            <p class="text-xs text-slate-500 font-medium hidden sm:block">DOM, Validasi, Storage & SPA Routing</p>
+          </div>
+        </div>
+
+        <!-- Navigation Tabs -->
+        <nav class="flex items-center space-x-1 sm:space-x-2 bg-slate-100 p-1.5 rounded-xl border border-slate-200/80" aria-label="Tabs" id="tab-navigation">
+          <button type="button" 
+                  data-tab="expense" 
+                  class="tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900"
+                  aria-selected="false">
+            <i class="ti ti-wallet text-base"></i>
+            <span>Expense</span>
+          </button>
+          <button type="button" 
+                  data-tab="bookmark" 
+                  class="tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900"
+                  aria-selected="false">
+            <i class="ti ti-bookmark text-base"></i>
+            <span>Bookmark</span>
+          </button>
+          <button type="button" 
+                  data-tab="quiz" 
+                  class="tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-600 hover:text-slate-900"
+                  aria-selected="false">
+            <i class="ti ti-help-circle text-base"></i>
+            <span>Quiz App</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- ========================================== -->
+    <!-- 1️⃣ TAB PANEL: EXPENSE TRACKER             -->
+    <!-- ========================================== -->
+    <section id="panel-expense" class="tab-panel hidden space-y-8" aria-labelledby="tab-expense">
+      <!-- Title & Intro -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-indigo-50 text-indigo-600 inline-flex"><i class="ti ti-cash"></i></span>
+            Expense Tracker
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Catat dan pantau arus kas pemasukan serta pengeluaran harian Anda.</p>
+        </div>
+        <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/80 inline-flex items-center gap-1.5 self-start sm:self-auto">
+          <i class="ti ti-database text-indigo-500"></i>
+          <span>Key: <code class="font-mono font-semibold text-slate-700">expense_tracker_data</code></span>
+        </div>
+      </div>
+
+      <!-- Summary Statistics Cards -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <!-- Saldo Akhir -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Saldo Akhir</span>
+            <div class="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+              <i class="ti ti-scale text-xl"></i>
+            </div>
+          </div>
+          <div id="expense-balance" class="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 truncate tracking-tight">Rp 0</div>
+          <p class="text-xs text-slate-400 mt-1">Selisih total pemasukan & pengeluaran</p>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 to-indigo-600"></div>
+        </div>
+
+        <!-- Total Pemasukan -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600">Total Pemasukan</span>
+            <div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+              <i class="ti ti-arrow-up-right text-xl"></i>
+            </div>
+          </div>
+          <div id="expense-total-income" class="text-2xl sm:text-3xl font-extrabold text-emerald-600 mt-3 truncate tracking-tight">Rp 0</div>
+          <p class="text-xs text-slate-400 mt-1">Akumulasi seluruh transaksi masuk</p>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-emerald-500"></div>
+        </div>
+
+        <!-- Total Pengeluaran -->
+        <div class="bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-500">Total Pengeluaran</span>
+            <div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center">
+              <i class="ti ti-arrow-down-left text-xl"></i>
+            </div>
+          </div>
+          <div id="expense-total-expense" class="text-2xl sm:text-3xl font-extrabold text-rose-600 mt-3 truncate tracking-tight">Rp 0</div>
+          <p class="text-xs text-slate-400 mt-1">Akumulasi seluruh transaksi keluar</p>
+          <div class="absolute bottom-0 left-0 right-0 h-1 bg-rose-500"></div>
+        </div>
+      </div>
+
+      <!-- Main Layout: Form (Left) & Transaction List (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Form Tambah Transaksi (4 Cols) -->
+        <div class="lg:col-span-4 bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm">
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-4">
+            <i class="ti ti-plus text-indigo-600"></i>
+            Tambah Transaksi Baru
+          </h3>
+
+          <form id="expense-form" class="space-y-4" novalidate>
+            <!-- Judul Transaksi -->
+            <div>
+              <label for="expense-input-title" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Judul Transaksi <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" 
+                     id="expense-input-title" 
+                     placeholder="cth: Gaji Bulanan, Makan Siang" 
+                     class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+              <p id="expense-error-title" class="text-xs text-rose-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Tipe Transaksi -->
+            <div>
+              <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Tipe Transaksi <span class="text-rose-500">*</span>
+              </label>
+              <div class="grid grid-cols-2 gap-3">
+                <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:text-emerald-700 text-slate-600 font-medium text-sm transition-all">
+                  <input type="radio" name="expense-type" value="income" class="sr-only" checked>
+                  <i class="ti ti-arrow-up-right mr-1.5 text-base text-emerald-600"></i>
+                  Pemasukan
+                </label>
+                <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 has-[:checked]:text-rose-700 text-slate-600 font-medium text-sm transition-all">
+                  <input type="radio" name="expense-type" value="expense" class="sr-only">
+                  <i class="ti ti-arrow-down-left mr-1.5 text-base text-rose-500"></i>
+                  Pengeluaran
+                </label>
+              </div>
+            </div>
+
+            <!-- Nominal / Jumlah -->
+            <div>
+              <label for="expense-input-amount" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Nominal (Rp) <span class="text-rose-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-sm font-semibold text-slate-400">Rp</span>
+                <input type="number" 
+                       id="expense-input-amount" 
+                       min="1" 
+                       placeholder="0" 
+                       class="w-full pl-11 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+              </div>
+              <p id="expense-error-amount" class="text-xs text-rose-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Kategori -->
+            <div>
+              <label for="expense-input-category" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Kategori <span class="text-rose-500">*</span>
+              </label>
+              <select id="expense-input-category" 
+                      class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+                <option value="Gaji">Gaji / Penghasilan</option>
+                <option value="Makanan">Makanan & Minuman</option>
+                <option value="Transportasi">Transportasi</option>
+                <option value="Belanja">Belanja</option>
+                <option value="Tagihan">Tagihan & Utilitas</option>
+                <option value="Hiburan">Hiburan</option>
+                <option value="Investasi">Investasi / Tabungan</option>
+                <option value="Lainnya">Lain-lain</option>
+              </select>
+            </div>
+
+            <!-- Tanggal Transaksi -->
+            <div>
+              <label for="expense-input-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Tanggal <span class="text-rose-500">*</span>
+              </label>
+              <input type="date" 
+                     id="expense-input-date" 
+                     class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+              <p id="expense-error-date" class="text-xs text-rose-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Tombol Submit -->
+            <button type="submit" 
+                    id="expense-btn-submit"
+                    class="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-md shadow-indigo-100 transition duration-150 flex items-center justify-center gap-2">
+              <i class="ti ti-plus text-base"></i>
+              Simpan Transaksi
+            </button>
+          </form>
+        </div>
+
+        <!-- Transaction List & Filter Section (8 Cols) -->
+        <div class="lg:col-span-8 space-y-4">
+          <!-- Filter, Search & Sort Control Bar -->
+          <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col md:flex-row gap-3 items-stretch md:items-center justify-between">
+            <!-- Search Input -->
+            <div class="relative flex-1">
+              <i class="ti ti-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+              <input type="text" 
+                     id="expense-search" 
+                     placeholder="Cari judul atau kategori..." 
+                     class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+            </div>
+
+            <!-- Filter Tipe -->
+            <div class="flex items-center gap-2">
+              <select id="expense-filter-type" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+                <option value="all">Semua Tipe</option>
+                <option value="income">Pemasukan</option>
+                <option value="expense">Pengeluaran</option>
+              </select>
+
+              <!-- Sorting -->
+              <select id="expense-sort-by" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+                <option value="date-desc">Tanggal: Terbaru</option>
+                <option value="date-asc">Tanggal: Terlama</option>
+                <option value="amount-desc">Nominal: Tertinggi</option>
+                <option value="amount-asc">Nominal: Terendah</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Transaction List Container -->
+          <div class="bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-200/80 flex items-center justify-between bg-slate-50/50">
+              <h4 class="text-sm font-bold uppercase tracking-wider text-slate-600">Riwayat Transaksi</h4>
+              <span id="expense-counter" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600">0 transaksi</span>
+            </div>
+
+            <!-- List Elements -->
+            <div id="expense-list-container" class="divide-y divide-slate-100">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="expense-empty-state" class="py-16 px-4 text-center hidden">
+              <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-3xl">
+                <i class="ti ti-receipt-off"></i>
+              </div>
+              <h5 class="text-base font-bold text-slate-800">Belum Ada Transaksi</h5>
+              <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">Data masih kosong atau tidak ada transaksi yang cocok dengan kriteria pencarian dan filter Anda.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 2️⃣ TAB PANEL: BOOKMARK MANAGER            -->
+    <!-- ========================================== -->
+    <section id="panel-bookmark" class="tab-panel hidden space-y-8" aria-labelledby="tab-bookmark">
+      <!-- Title & Intro -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-indigo-50 text-indigo-600 inline-flex"><i class="ti ti-bookmark"></i></span>
+            Bookmark Manager
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Simpan dan kelola tautan web favorit Anda dengan aman.</p>
+        </div>
+        <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/80 inline-flex items-center gap-1.5 self-start sm:self-auto">
+          <i class="ti ti-database text-indigo-500"></i>
+          <span>Key: <code class="font-mono font-semibold text-slate-700">bookmark_manager_data</code></span>
+        </div>
+      </div>
+
+      <!-- Main Layout: Form (Left) & Bookmark Grid (Right) -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        
+        <!-- Form Tambah Bookmark (4 Cols) -->
+        <div class="lg:col-span-4 bg-white rounded-2xl p-6 border border-slate-200/90 shadow-sm">
+          <h3 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2 mb-4">
+            <i class="ti ti-link text-indigo-600"></i>
+            Tambah Tautan Baru
+          </h3>
+
+          <form id="bookmark-form" class="space-y-4" novalidate>
+            <!-- Judul Bookmark -->
+            <div>
+              <label for="bookmark-input-title" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Judul Bookmark <span class="text-rose-500">*</span>
+              </label>
+              <input type="text" 
+                     id="bookmark-input-title" 
+                     placeholder="cth: MDN Web Docs" 
+                     class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+              <p id="bookmark-error-title" class="text-xs text-rose-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- URL Bookmark -->
+            <div>
+              <label for="bookmark-input-url" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                URL Website <span class="text-rose-500">*</span>
+              </label>
+              <input type="url" 
+                     id="bookmark-input-url" 
+                     placeholder="https://developer.mozilla.org" 
+                     class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+              <span class="text-[11px] text-slate-400 block mt-1">Harus diawali dengan <code class="font-mono text-indigo-600">http://</code> atau <code class="font-mono text-indigo-600">https://</code></span>
+              <p id="bookmark-error-url" class="text-xs text-rose-500 mt-1 hidden"></p>
+            </div>
+
+            <!-- Kategori -->
+            <div>
+              <label for="bookmark-input-category" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Kategori <span class="text-rose-500">*</span>
+              </label>
+              <select id="bookmark-input-category" 
+                      class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+                <option value="Dokumentasi">Dokumentasi</option>
+                <option value="Belajar">Belajar / Tutorial</option>
+                <option value="Pekerjaan">Pekerjaan</option>
+                <option value="Desain">Desain & UI/UX</option>
+                <option value="Tools">Tools & Utilitas</option>
+                <option value="Lainnya">Lain-lain</option>
+              </select>
+            </div>
+
+            <!-- Catatan (Opsional) -->
+            <div>
+              <label for="bookmark-input-note" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+                Catatan Singkat <span class="text-slate-400 font-normal">(opsional)</span>
+              </label>
+              <textarea id="bookmark-input-note" 
+                        rows="3" 
+                        placeholder="cth: Referensi dokumentasi JavaScript terlengkap" 
+                        class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors resize-none"></textarea>
+            </div>
+
+            <!-- Tombol Submit -->
+            <button type="submit" 
+                    id="bookmark-btn-submit"
+                    class="w-full mt-2 py-3 px-4 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-sm rounded-xl shadow-md shadow-indigo-100 transition duration-150 flex items-center justify-center gap-2">
+              <i class="ti ti-plus text-base"></i>
+              Simpan Bookmark
+            </button>
+          </form>
+        </div>
+
+        <!-- Bookmark Grid & Filter Section (8 Cols) -->
+        <div class="lg:col-span-8 space-y-4">
+          <!-- Filter, Search & Sort Control Bar -->
+          <div class="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/90 shadow-sm flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+            <!-- Search Input -->
+            <div class="relative flex-1">
+              <i class="ti ti-search absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-base"></i>
+              <input type="text" 
+                     id="bookmark-search" 
+                     placeholder="Cari judul, kategori, atau URL..." 
+                     class="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+            </div>
+
+            <!-- Sorting Dropdown -->
+            <div class="flex items-center gap-2">
+              <select id="bookmark-sort-by" class="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 font-medium focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 transition-colors">
+                <option value="created-desc">Terbaru Ditambahkan</option>
+                <option value="created-asc">Terlama Ditambahkan</option>
+                <option value="title-asc">Judul: A - Z</option>
+                <option value="title-desc">Judul: Z - A</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Bookmark Cards Container -->
+          <div class="space-y-3">
+            <div class="flex items-center justify-between px-1">
+              <h4 class="text-xs font-bold uppercase tracking-wider text-slate-500">Daftar Bookmark</h4>
+              <span id="bookmark-counter" class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-600">0 tautan</span>
+            </div>
+
+            <div id="bookmark-grid-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="bookmark-empty-state" class="bg-white rounded-2xl border border-slate-200/90 shadow-sm py-16 px-4 text-center hidden">
+              <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center text-3xl">
+                <i class="ti ti-bookmarks-off"></i>
+              </div>
+              <h5 class="text-base font-bold text-slate-800">Belum Ada Bookmark</h5>
+              <p class="text-xs text-slate-500 max-w-sm mx-auto mt-1">Data masih kosong atau tautan yang Anda cari tidak ditemukan.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 3️⃣ TAB PANEL: QUIZ APP                    -->
+    <!-- ========================================== -->
+    <section id="panel-quiz" class="tab-panel hidden space-y-8" aria-labelledby="tab-quiz">
+      <!-- Title & Intro -->
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
+        <div>
+          <h2 class="text-2xl font-bold text-slate-900 tracking-tight flex items-center gap-2">
+            <span class="p-2 rounded-lg bg-indigo-50 text-indigo-600 inline-flex"><i class="ti ti-brain"></i></span>
+            Quiz App
+          </h2>
+          <p class="text-sm text-slate-500 mt-1">Uji pemahaman Anda seputar JavaScript murni, DOM, dan Web API.</p>
+        </div>
+        <div class="text-xs text-slate-500 bg-slate-100 px-3 py-1.5 rounded-lg border border-slate-200/80 inline-flex items-center gap-1.5 self-start sm:self-auto">
+          <i class="ti ti-database text-indigo-500"></i>
+          <span>Key: <code class="font-mono font-semibold text-slate-700">quiz_app_highscore</code></span>
+        </div>
+      </div>
+
+      <!-- Quiz Center Card -->
+      <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden p-6 sm:p-10 relative">
+
+          <!-- 1. SCREEN: START / WELCOME -->
+          <div id="quiz-screen-start" class="text-center space-y-6">
+            <div class="w-20 h-20 mx-auto rounded-3xl bg-gradient-to-tr from-indigo-600 to-violet-500 text-white flex items-center justify-center text-4xl shadow-xl shadow-indigo-100">
+              <i class="ti ti-award"></i>
+            </div>
+            <div>
+              <h3 class="text-2xl font-extrabold text-slate-900 tracking-tight">Kuis Pengetahuan JavaScript</h3>
+              <p class="text-sm text-slate-500 mt-2 max-w-md mx-auto">
+                Kuis interaktif terdiri dari <span id="quiz-total-questions-start" class="font-bold text-slate-700">5</span> pertanyaan seputar DOM, event handling, dan konsep JavaScript modern.
+              </p>
+            </div>
+
+            <!-- Highscore Card -->
+            <div class="inline-flex items-center gap-3 bg-amber-50 border border-amber-200 text-amber-900 px-5 py-3 rounded-2xl">
+              <i class="ti ti-trophy text-2xl text-amber-600"></i>
+              <div class="text-left">
+                <span class="text-[11px] font-bold uppercase tracking-wider text-amber-700 block">Skor Tertinggi Anda</span>
+                <span id="quiz-highscore-display" class="text-lg font-black text-amber-900">0 Poin</span>
+              </div>
+            </div>
+
+            <div>
+              <button type="button" 
+                      id="quiz-btn-start" 
+                      class="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-base rounded-2xl shadow-lg shadow-indigo-200 transition duration-150 inline-flex items-center gap-2">
+                <i class="ti ti-player-play"></i>
+                Mulai Kuis
+              </button>
+            </div>
+          </div>
+
+          <!-- 2. SCREEN: QUESTION & FEEDBACK -->
+          <div id="quiz-screen-question" class="hidden space-y-6">
+            <!-- Header: Progress & Index -->
+            <div>
+              <div class="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+                <span id="quiz-question-number">Soal 1 dari 5</span>
+                <span id="quiz-current-score-tag" class="text-indigo-600 font-extrabold">Skor: 0</span>
+              </div>
+              <!-- Progress Bar -->
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-violet-600 transition-all duration-300" style="width: 20%;"></div>
+              </div>
+            </div>
+
+            <!-- Question Text -->
+            <div class="pt-2">
+              <h3 id="quiz-question-text" class="text-lg sm:text-xl font-bold text-slate-900 tracking-tight leading-snug">
+                <!-- Question loaded dynamically -->
+              </h3>
+            </div>
+
+            <!-- Options Buttons List -->
+            <div id="quiz-options-container" class="space-y-3">
+              <!-- Rendered via JS -->
+            </div>
+
+            <!-- Feedback Alert Banner -->
+            <div id="quiz-feedback-banner" class="hidden p-4 rounded-2xl border text-sm font-medium transition-all">
+              <div class="flex items-start gap-3">
+                <i id="quiz-feedback-icon" class="text-xl mt-0.5"></i>
+                <div>
+                  <h5 id="quiz-feedback-title" class="font-bold"></h5>
+                  <p id="quiz-feedback-message" class="text-xs mt-0.5"></p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Next Question Button -->
+            <div class="flex justify-end pt-2">
+              <button type="button" 
+                      id="quiz-btn-next" 
+                      class="hidden px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm rounded-xl shadow-md shadow-indigo-100 transition duration-150 inline-flex items-center gap-2">
+                <span>Soal Berikutnya</span>
+                <i class="ti ti-arrow-right"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 3. SCREEN: RESULT -->
+          <div id="quiz-screen-result" class="hidden text-center space-y-6 py-4">
+            <div id="quiz-result-badge" class="w-20 h-20 mx-auto rounded-3xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-4xl shadow-inner">
+              <i class="ti ti-confetti"></i>
+            </div>
+            <div>
+              <h3 class="text-2xl font-extrabold text-slate-900 tracking-tight">Kuis Selesai!</h3>
+              <p id="quiz-result-message" class="text-sm text-slate-500 mt-1">Kerja bagus, berikut adalah hasil akhir kuis Anda:</p>
+            </div>
+
+            <!-- Final Score Display -->
+            <div class="p-6 bg-slate-50 rounded-2xl border border-slate-200/80 max-w-sm mx-auto space-y-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Skor Akhir</span>
+              <div id="quiz-final-score" class="text-4xl font-black text-indigo-600 tracking-tight">0 / 0</div>
+              <p id="quiz-score-percentage" class="text-xs font-semibold text-slate-500">Tingkat Akurasi: 0%</p>
+            </div>
+
+            <!-- New High Score Banner (Shown if broken) -->
+            <div id="quiz-new-highscore-badge" class="hidden inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2 rounded-xl text-xs font-bold">
+              <i class="ti ti-sparkles text-emerald-600"></i>
+              Selamat! Anda mencetak Rekor Skor Tertinggi baru!
+            </div>
+
+            <div class="pt-2">
+              <button type="button" 
+                      id="quiz-btn-restart" 
+                      class="px-8 py-3 bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-bold text-sm rounded-xl shadow-md shadow-indigo-100 transition duration-150 inline-flex items-center gap-2">
+                <i class="ti ti-rotate"></i>
+                Ulangi Kuis
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================== -->
+  <!-- 🪟 GLOBAL MODALS                          -->
+  <!-- ========================================== -->
+
+  <!-- Modal Edit Expense -->
+  <div id="modal-edit-expense" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h4 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="ti ti-edit text-indigo-600"></i>
+          Ubah Transaksi
+        </h4>
+        <button type="button" id="modal-close-edit-expense" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors">
+          <i class="ti ti-x text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-edit-expense" class="space-y-4" novalidate>
+        <input type="hidden" id="edit-expense-id">
+
+        <div>
+          <label for="edit-expense-title" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            Judul Transaksi <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="edit-expense-title" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+          <p id="edit-expense-error-title" class="text-xs text-rose-500 mt-1 hidden"></p>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            Tipe Transaksi <span class="text-rose-500">*</span>
+          </label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50/50 has-[:checked]:text-emerald-700 text-slate-600 font-medium text-sm">
+              <input type="radio" name="edit-expense-type" value="income" class="sr-only">
+              <i class="ti ti-arrow-up-right mr-1.5 text-base text-emerald-600"></i>
+              Pemasukan
+            </label>
+            <label class="relative flex items-center justify-center p-2.5 rounded-xl border border-slate-200 bg-slate-50 cursor-pointer has-[:checked]:border-rose-500 has-[:checked]:bg-rose-50/50 has-[:checked]:text-rose-700 text-slate-600 font-medium text-sm">
+              <input type="radio" name="edit-expense-type" value="expense" class="sr-only">
+              <i class="ti ti-arrow-down-left mr-1.5 text-base text-rose-500"></i>
+              Pengeluaran
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <label for="edit-expense-amount" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            Nominal (Rp) <span class="text-rose-500">*</span>
+          </label>
+          <input type="number" min="1" id="edit-expense-amount" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+          <p id="edit-expense-error-amount" class="text-xs text-rose-500 mt-1 hidden"></p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label for="edit-expense-category" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+              Kategori <span class="text-rose-500">*</span>
+            </label>
+            <select id="edit-expense-category" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+              <option value="Gaji">Gaji / Penghasilan</option>
+              <option value="Makanan">Makanan & Minuman</option>
+              <option value="Transportasi">Transportasi</option>
+              <option value="Belanja">Belanja</option>
+              <option value="Tagihan">Tagihan & Utilitas</option>
+              <option value="Hiburan">Hiburan</option>
+              <option value="Investasi">Investasi / Tabungan</option>
+              <option value="Lainnya">Lain-lain</option>
+            </select>
+          </div>
+          <div>
+            <label for="edit-expense-date" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+              Tanggal <span class="text-rose-500">*</span>
+            </label>
+            <input type="date" id="edit-expense-date" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+            <p id="edit-expense-error-date" class="text-xs text-rose-500 mt-1 hidden"></p>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <button type="button" id="modal-cancel-edit-expense" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-100">
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Edit Bookmark -->
+  <div id="modal-edit-bookmark" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-lg w-full border border-slate-200 shadow-2xl p-6 sm:p-7 space-y-5 animate-in fade-in zoom-in-95 duration-150">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h4 class="text-lg font-bold text-slate-900 tracking-tight flex items-center gap-2">
+          <i class="ti ti-edit text-indigo-600"></i>
+          Ubah Bookmark
+        </h4>
+        <button type="button" id="modal-close-edit-bookmark" class="w-8 h-8 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 flex items-center justify-center transition-colors">
+          <i class="ti ti-x text-lg"></i>
+        </button>
+      </div>
+
+      <form id="form-edit-bookmark" class="space-y-4" novalidate>
+        <input type="hidden" id="edit-bookmark-id">
+
+        <div>
+          <label for="edit-bookmark-title" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            Judul Bookmark <span class="text-rose-500">*</span>
+          </label>
+          <input type="text" id="edit-bookmark-title" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+          <p id="edit-bookmark-error-title" class="text-xs text-rose-500 mt-1 hidden"></p>
+        </div>
+
+        <div>
+          <label for="edit-bookmark-url" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            URL Website <span class="text-rose-500">*</span>
+          </label>
+          <input type="url" id="edit-bookmark-url" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+          <p id="edit-bookmark-error-url" class="text-xs text-rose-500 mt-1 hidden"></p>
+        </div>
+
+        <div>
+          <label for="edit-bookmark-category" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            Kategori <span class="text-rose-500">*</span>
+          </label>
+          <select id="edit-bookmark-category" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600">
+            <option value="Dokumentasi">Dokumentasi</option>
+            <option value="Belajar">Belajar / Tutorial</option>
+            <option value="Pekerjaan">Pekerjaan</option>
+            <option value="Desain">Desain & UI/UX</option>
+            <option value="Tools">Tools & Utilitas</option>
+            <option value="Lainnya">Lain-lain</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="edit-bookmark-note" class="block text-xs font-semibold uppercase tracking-wider text-slate-700 mb-1.5">
+            Catatan Singkat <span class="text-slate-400 font-normal">(opsional)</span>
+          </label>
+          <textarea id="edit-bookmark-note" rows="3" class="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 resize-none"></textarea>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <button type="button" id="modal-cancel-edit-bookmark" class="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50">
+            Batal
+          </button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm shadow-md shadow-indigo-100">
+            Simpan Perubahan
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Reusable Confirmation Delete Modal -->
+  <div id="modal-confirm-delete" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs hidden items-center justify-center p-4">
+    <div class="bg-white rounded-3xl max-w-sm w-full border border-slate-200 shadow-2xl p-6 text-center space-y-4 animate-in fade-in zoom-in-95 duration-150">
+      <div class="w-14 h-14 mx-auto rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center text-3xl">
+        <i class="ti ti-trash"></i>
+      </div>
+      <div>
+        <h4 id="confirm-delete-title" class="text-lg font-bold text-slate-900">Konfirmasi Hapus</h4>
+        <p id="confirm-delete-message" class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus data ini? Tindakan ini tidak dapat dibatalkan.</p>
+      </div>
+      <div class="flex items-center justify-center gap-3 pt-2">
+        <button type="button" id="btn-cancel-delete" class="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-50">
+          Batal
+        </button>
+        <button type="button" id="btn-proceed-delete" class="w-1/2 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm shadow-md shadow-rose-100">
+          Ya, Hapus
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="mt-auto py-6 border-t border-slate-200 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-400">
+      <p>Praktikum 3 — Pemrograman Aplikasi Berbasis Web (JavaScript Studi Kasus)</p>
+      <p class="mt-1">Implementasi Vanilla JavaScript ES6+, Semantic HTML5, Tailwind CSS &amp; Web Storage API.</p>
+    </div>
+  </footer>
+
+  <!-- Main JavaScript File (No inline JS) -->
+  <script src="assets/script.js"></script>
+</body>
+</html>
