@@ -17,16 +17,6 @@
   <!-- Tabler Icons Webfont -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css">
   
-  <!-- Suppress Tailwind CDN production warning for Lighthouse 100 Best Practices -->
-  <script>
-    (function() {
-      const origWarn = console.warn;
-      console.warn = function(...args) {
-        if (typeof args[0] === 'string' && args[0].includes('cdn.tailwindcss.com')) return;
-        origWarn.apply(console, args);
-      };
-    })();
-  </script>
   <!-- Tailwind CSS via CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
@@ -313,7 +303,17 @@
           <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/80">
               <h4 class="text-sm font-bold uppercase tracking-wider text-slate-800">Riwayat Transaksi</h4>
-              <span id="expense-counter" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900">0 transaksi</span>
+              <div class="flex items-center gap-2">
+                <span id="expense-counter" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900">0 transaksi</span>
+                <button type="button" 
+                        id="expense-btn-reset" 
+                        class="text-xs font-bold text-slate-700 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded-lg border border-slate-300 transition-colors inline-flex items-center gap-1"
+                        title="Kosongkan Semua Transaksi"
+                        aria-label="Kosongkan Semua Transaksi">
+                  <i class="ti ti-trash text-xs" aria-hidden="true"></i>
+                  <span>Reset Data</span>
+                </button>
+              </div>
             </div>
 
             <!-- List Elements -->
@@ -461,7 +461,17 @@
           <div class="space-y-3">
             <div class="flex items-center justify-between px-1">
               <h4 class="text-xs font-bold uppercase tracking-wider text-slate-800">Daftar Bookmark</h4>
-              <span id="bookmark-counter" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900">0 tautan</span>
+              <div class="flex items-center gap-2">
+                <span id="bookmark-counter" class="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900">0 tautan</span>
+                <button type="button" 
+                        id="bookmark-btn-reset" 
+                        class="text-xs font-bold text-slate-700 hover:text-rose-800 hover:bg-rose-50 px-2 py-1 rounded-lg border border-slate-300 transition-colors inline-flex items-center gap-1"
+                        title="Kosongkan Semua Bookmark"
+                        aria-label="Kosongkan Semua Bookmark">
+                  <i class="ti ti-trash text-xs" aria-hidden="true"></i>
+                  <span>Reset Data</span>
+                </button>
+              </div>
             </div>
 
             <div id="bookmark-grid-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
