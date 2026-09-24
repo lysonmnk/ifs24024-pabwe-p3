@@ -116,7 +116,122 @@ function setStorage(key, value) {
 }
 
 // =============================================================================
-// 2. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA)
+// 2. FORM VALIDATION HELPERS (DRY & REUSABLE FIELD CONFIGURATION)
+// =============================================================================
+
+/**
+ * Kumpulan aturan validasi modular
+ */
+const ValidationRules = {
+  required: (message = 'Field ini wajib diisi.') => ({
+    test: (val) => String(val ?? '').trim().length > 0,
+    message,
+  }),
+  positiveNumber: (message = 'Nominal harus berupa angka lebih besar dari 0.') => ({
+    test: (val) => {
+      const num = Number(val);
+      return !isNaN(num) && num > 0 && String(val ?? '').trim() !== '';
+    },
+    message,
+  }),
+  httpUrl: (message = 'URL harus diawali dengan http:// atau https:// dan memiliki format yang valid.') => ({
+    test: (val) => isValidHttpUrl(String(val ?? '').trim()),
+    message,
+  }),
+  validDate: (message = 'Tanggal transaksi wajib dipilih.') => ({
+    test: (val) => String(val ?? '').trim().length > 0,
+    message,
+  }),
+};
+
+/**
+ * Helper validasi form generik berbasis konfigurasi field (Menghilangkan duplikasi kode)
+ * @param {Array<{ value: *, errorEl?: HTMLElement, rules: Array<{ test: Function, message: string }> }>} fieldConfigs
+ * @returns {boolean} True jika semua field lolos validasi
+ */
+function validateFormFields(fieldConfigs) {
+  let isAllValid = true;
+
+  fieldConfigs.forEach(({ value, errorEl, rules }) => {
+    let errorMessage = '';
+
+    for (const rule of rules) {
+      if (!rule.test(value)) {
+        errorMessage = rule.message;
+        break;
+      }
+    }
+
+    if (errorEl) {
+      if (errorMessage) {
+        errorEl.textContent = errorMessage;
+        errorEl.classList.remove('hidden');
+      } else {
+        errorEl.textContent = '';
+        errorEl.classList.add('hidden');
+      }
+    }
+
+    if (errorMessage) {
+      isAllValid = false;
+    }
+  });
+
+  return isAllValid;
+}
+
+/**
+ * Validasi bersama untuk input Expense Tracker (dipakai pada Tambah & Ubah)
+ * @param {{ title: *, amount: *, date: * }} data
+ * @param {{ title?: HTMLElement, amount?: HTMLElement, date?: HTMLElement }} errorEls
+ * @returns {boolean}
+ */
+function validateExpenseInputs(data, errorEls = {}) {
+  return validateFormFields([
+    {
+      value: data.title,
+      errorEl: errorEls.title,
+      rules: [ValidationRules.required('Judul transaksi wajib diisi.')],
+    },
+    {
+      value: data.amount,
+      errorEl: errorEls.amount,
+      rules: [ValidationRules.positiveNumber('Nominal harus berupa angka lebih besar dari 0.')],
+    },
+    {
+      value: data.date,
+      errorEl: errorEls.date,
+      rules: [ValidationRules.validDate('Tanggal transaksi wajib dipilih.')],
+    },
+  ]);
+}
+
+/**
+ * Validasi bersama untuk input Bookmark Manager (dipakai pada Tambah & Ubah)
+ * @param {{ title: *, url: * }} data
+ * @param {{ title?: HTMLElement, url?: HTMLElement }} errorEls
+ * @returns {boolean}
+ */
+function validateBookmarkInputs(data, errorEls = {}) {
+  return validateFormFields([
+    {
+      value: data.title,
+      errorEl: errorEls.title,
+      rules: [ValidationRules.required('Judul bookmark wajib diisi.')],
+    },
+    {
+      value: data.url,
+      errorEl: errorEls.url,
+      rules: [
+        ValidationRules.required('URL website wajib diisi.'),
+        ValidationRules.httpUrl('URL harus diawali dengan http:// atau https:// dan memiliki format yang valid.'),
+      ],
+    },
+  ]);
+}
+
+// =============================================================================
+// 3. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA)
 // =============================================================================
 
 const STORAGE_KEYS = {
@@ -197,7 +312,7 @@ function switchTab(targetTab, pushHistory = false) {
 }
 
 // =============================================================================
-// 3. GLOBAL MODAL CONFIRMATION DIALOG (REUSABLE)
+// 4. GLOBAL MODAL CONFIRMATION DIALOG (REUSABLE)
 // =============================================================================
 
 let onConfirmDeleteCallback = null;
@@ -232,7 +347,7 @@ function hideDeleteConfirmation() {
 }
 
 // =============================================================================
-// 4. EXPENSE TRACKER FEATURE
+// 5. EXPENSE TRACKER FEATURE
 // =============================================================================
 
 /**
@@ -441,59 +556,37 @@ function renderExpenses() {
 }
 
 /**
- * Validasi form transaksi baru
- * @returns {boolean}
- */
-function validateExpenseForm() {
-  let isValid = true;
-
-  const titleVal = expenseInputTitle.value.trim();
-  if (!titleVal) {
-    expenseErrorTitle.textContent = 'Judul transaksi wajib diisi.';
-    expenseErrorTitle.classList.remove('hidden');
-    isValid = false;
-  } else {
-    expenseErrorTitle.classList.add('hidden');
-  }
-
-  const amountVal = Number(expenseInputAmount.value);
-  if (!expenseInputAmount.value || isNaN(amountVal) || amountVal <= 0) {
-    expenseErrorAmount.textContent = 'Nominal harus berupa angka lebih besar dari 0.';
-    expenseErrorAmount.classList.remove('hidden');
-    isValid = false;
-  } else {
-    expenseErrorAmount.classList.add('hidden');
-  }
-
-  if (!expenseInputDate.value) {
-    expenseErrorDate.textContent = 'Tanggal transaksi wajib dipilih.';
-    expenseErrorDate.classList.remove('hidden');
-    isValid = false;
-  } else {
-    expenseErrorDate.classList.add('hidden');
-  }
-
-  return isValid;
-}
-
-/**
- * Handle submit tambah transaksi baru
+ * Handle submit tambah transaksi baru (Menggunakan helper validasi bersama)
  * @param {Event} e 
  */
 function handleAddExpense(e) {
   e.preventDefault();
-  if (!validateExpenseForm()) return;
+
+  const title = expenseInputTitle.value;
+  const amount = expenseInputAmount.value;
+  const date = expenseInputDate.value;
+
+  const isValid = validateExpenseInputs(
+    { title, amount, date },
+    {
+      title: expenseErrorTitle,
+      amount: expenseErrorAmount,
+      date: expenseErrorDate,
+    }
+  );
+
+  if (!isValid) return;
 
   const selectedTypeEl = document.querySelector('input[name="expense-type"]:checked');
   const type = selectedTypeEl ? selectedTypeEl.value : 'income';
 
   const newExpense = {
     id: 'e-' + Date.now(),
-    title: expenseInputTitle.value.trim(),
+    title: title.trim(),
     category: expenseInputCategory.value,
-    amount: Number(expenseInputAmount.value),
+    amount: Number(amount),
     type: type,
-    date: expenseInputDate.value,
+    date: date,
   };
 
   expenses.unshift(newExpense);
@@ -543,44 +636,28 @@ function closeEditExpenseModal() {
 }
 
 /**
- * Handle submit simpan hasil edit transaksi
+ * Handle submit simpan hasil edit transaksi (Menggunakan helper validasi bersama)
  * @param {Event} e 
  */
 function handleSaveEditExpense(e) {
   e.preventDefault();
 
   const id = editExpenseId.value;
-  const title = editExpenseTitle.value.trim();
-  const amount = Number(editExpenseAmount.value);
+  const title = editExpenseTitle.value;
+  const amount = editExpenseAmount.value;
   const date = editExpenseDate.value;
   const category = editExpenseCategory.value;
   const selectedTypeEl = document.querySelector('input[name="edit-expense-type"]:checked');
   const type = selectedTypeEl ? selectedTypeEl.value : 'income';
 
-  let isValid = true;
-  if (!title) {
-    editExpenseErrorTitle.textContent = 'Judul transaksi wajib diisi.';
-    editExpenseErrorTitle.classList.remove('hidden');
-    isValid = false;
-  } else {
-    editExpenseErrorTitle.classList.add('hidden');
-  }
-
-  if (!amount || isNaN(amount) || amount <= 0) {
-    editExpenseErrorAmount.textContent = 'Nominal harus berupa angka lebih besar dari 0.';
-    editExpenseErrorAmount.classList.remove('hidden');
-    isValid = false;
-  } else {
-    editExpenseErrorAmount.classList.add('hidden');
-  }
-
-  if (!date) {
-    editExpenseErrorDate.textContent = 'Tanggal transaksi wajib dipilih.';
-    editExpenseErrorDate.classList.remove('hidden');
-    isValid = false;
-  } else {
-    editExpenseErrorDate.classList.add('hidden');
-  }
+  const isValid = validateExpenseInputs(
+    { title, amount, date },
+    {
+      title: editExpenseErrorTitle,
+      amount: editExpenseErrorAmount,
+      date: editExpenseErrorDate,
+    }
+  );
 
   if (!isValid) return;
 
@@ -588,8 +665,8 @@ function handleSaveEditExpense(e) {
   if (index !== -1) {
     expenses[index] = {
       ...expenses[index],
-      title,
-      amount,
+      title: title.trim(),
+      amount: Number(amount),
       category,
       date,
       type
@@ -621,7 +698,7 @@ function promptDeleteExpense(id) {
 }
 
 // =============================================================================
-// 5. BOOKMARK MANAGER FEATURE
+// 6. BOOKMARK MANAGER FEATURE
 // =============================================================================
 
 /**
@@ -792,49 +869,29 @@ function renderBookmarks() {
 }
 
 /**
- * Validasi form tambah bookmark baru
- * @returns {boolean}
- */
-function validateBookmarkForm() {
-  let isValid = true;
-
-  const titleVal = bookmarkInputTitle.value.trim();
-  if (!titleVal) {
-    bookmarkErrorTitle.textContent = 'Judul bookmark wajib diisi.';
-    bookmarkErrorTitle.classList.remove('hidden');
-    isValid = false;
-  } else {
-    bookmarkErrorTitle.classList.add('hidden');
-  }
-
-  const urlVal = bookmarkInputUrl.value.trim();
-  if (!urlVal) {
-    bookmarkErrorUrl.textContent = 'URL website wajib diisi.';
-    bookmarkErrorUrl.classList.remove('hidden');
-    isValid = false;
-  } else if (!isValidHttpUrl(urlVal)) {
-    bookmarkErrorUrl.textContent = 'URL harus diawali dengan http:// atau https:// dan memiliki format yang valid.';
-    bookmarkErrorUrl.classList.remove('hidden');
-    isValid = false;
-  } else {
-    bookmarkErrorUrl.classList.add('hidden');
-  }
-
-  return isValid;
-}
-
-/**
- * Handle submit tambah bookmark baru
+ * Handle submit tambah bookmark baru (Menggunakan helper validasi bersama)
  * @param {Event} e 
  */
 function handleAddBookmark(e) {
   e.preventDefault();
-  if (!validateBookmarkForm()) return;
+
+  const title = bookmarkInputTitle.value;
+  const url = bookmarkInputUrl.value;
+
+  const isValid = validateBookmarkInputs(
+    { title, url },
+    {
+      title: bookmarkErrorTitle,
+      url: bookmarkErrorUrl,
+    }
+  );
+
+  if (!isValid) return;
 
   const newBookmark = {
     id: 'b-' + Date.now(),
-    title: bookmarkInputTitle.value.trim(),
-    url: bookmarkInputUrl.value.trim(),
+    title: title.trim(),
+    url: url.trim(),
     category: bookmarkInputCategory.value,
     note: bookmarkInputNote.value.trim(),
     createdAt: Date.now()
@@ -881,38 +938,25 @@ function closeEditBookmarkModal() {
 }
 
 /**
- * Handle submit simpan perubahan bookmark
+ * Handle submit simpan perubahan bookmark (Menggunakan helper validasi bersama)
  * @param {Event} e 
  */
 function handleSaveEditBookmark(e) {
   e.preventDefault();
 
   const id = editBookmarkId.value;
-  const title = editBookmarkTitle.value.trim();
-  const url = editBookmarkUrl.value.trim();
+  const title = editBookmarkTitle.value;
+  const url = editBookmarkUrl.value;
   const category = editBookmarkCategory.value;
   const note = editBookmarkNote.value.trim();
 
-  let isValid = true;
-  if (!title) {
-    editBookmarkErrorTitle.textContent = 'Judul bookmark wajib diisi.';
-    editBookmarkErrorTitle.classList.remove('hidden');
-    isValid = false;
-  } else {
-    editBookmarkErrorTitle.classList.add('hidden');
-  }
-
-  if (!url) {
-    editBookmarkErrorUrl.textContent = 'URL website wajib diisi.';
-    editBookmarkErrorUrl.classList.remove('hidden');
-    isValid = false;
-  } else if (!isValidHttpUrl(url)) {
-    editBookmarkErrorUrl.textContent = 'URL harus diawali dengan http:// atau https:// dan memiliki format yang valid.';
-    editBookmarkErrorUrl.classList.remove('hidden');
-    isValid = false;
-  } else {
-    editBookmarkErrorUrl.classList.add('hidden');
-  }
+  const isValid = validateBookmarkInputs(
+    { title, url },
+    {
+      title: editBookmarkErrorTitle,
+      url: editBookmarkErrorUrl,
+    }
+  );
 
   if (!isValid) return;
 
@@ -920,8 +964,8 @@ function handleSaveEditBookmark(e) {
   if (index !== -1) {
     bookmarks[index] = {
       ...bookmarks[index],
-      title,
-      url,
+      title: title.trim(),
+      url: url.trim(),
       category,
       note
     };
@@ -952,7 +996,7 @@ function promptDeleteBookmark(id) {
 }
 
 // =============================================================================
-// 6. QUIZ APP FEATURE
+// 7. QUIZ APP FEATURE (DYNAMIC SCORING BERBASIS SKALA 100)
 // =============================================================================
 
 /**
@@ -1033,8 +1077,9 @@ const QUIZ_QUESTIONS = [
   }
 ];
 
-// State Quiz
+// State Quiz Dinamis
 let currentQuestionIndex = 0;
+let correctAnswersCount = 0;
 let quizScore = 0;
 let isAnswerSubmitted = false;
 
@@ -1065,6 +1110,16 @@ const quizNewHighscoreBadge = document.getElementById('quiz-new-highscore-badge'
 const quizBtnRestart = document.getElementById('quiz-btn-restart');
 
 /**
+ * Menghitung bobot poin per soal secara dinamis berdasarkan total skala 100
+ * @returns {number}
+ */
+function getDynamicPointsPerQuestion() {
+  const total = QUIZ_QUESTIONS.length;
+  if (total <= 0) return 0;
+  return Math.round((100 / total) * 100) / 100;
+}
+
+/**
  * Membaca dan menampilkan skor tertinggi (Highscore) dari localStorage
  */
 function updateQuizHighScoreDisplay() {
@@ -1079,6 +1134,7 @@ function updateQuizHighScoreDisplay() {
  */
 function startQuiz() {
   currentQuestionIndex = 0;
+  correctAnswersCount = 0;
   quizScore = 0;
   isAnswerSubmitted = false;
 
@@ -1097,7 +1153,7 @@ function renderCurrentQuestion() {
   const question = QUIZ_QUESTIONS[currentQuestionIndex];
   isAnswerSubmitted = false;
 
-  // Header info
+  // Header info dinamis
   quizQuestionNumber.textContent = `Soal ${currentQuestionIndex + 1} dari ${totalQuestions}`;
   quizCurrentScoreTag.textContent = `Skor: ${quizScore}`;
   
@@ -1135,7 +1191,7 @@ function renderCurrentQuestion() {
 }
 
 /**
- * Handle ketika pengguna memilih jawaban opsi
+ * Handle ketika pengguna memilih jawaban opsi dengan skor proporsional dinamis
  * @param {number} selectedIndex 
  */
 function handleSelectAnswer(selectedIndex) {
@@ -1144,9 +1200,13 @@ function handleSelectAnswer(selectedIndex) {
 
   const currentQ = QUIZ_QUESTIONS[currentQuestionIndex];
   const isCorrect = selectedIndex === currentQ.answer;
+  const totalQuestions = QUIZ_QUESTIONS.length;
+  const pointsPerQuestion = getDynamicPointsPerQuestion();
 
   if (isCorrect) {
-    quizScore += 20; // 20 poin per soal
+    correctAnswersCount++;
+    // Perhitungan skor dinamis proporsional menuju 100 poin
+    quizScore = Math.min(100, Math.round((correctAnswersCount / totalQuestions) * 100));
   }
 
   quizCurrentScoreTag.textContent = `Skor: ${quizScore}`;
@@ -1178,12 +1238,12 @@ function handleSelectAnswer(selectedIndex) {
     }
   });
 
-  // Tampilkan feedback banner
+  // Tampilkan feedback banner dengan nilai poin dinamis
   quizFeedbackBanner.classList.remove('hidden');
   if (isCorrect) {
     quizFeedbackBanner.className = 'p-4 rounded-2xl border border-emerald-300 bg-emerald-100 text-emerald-950 transition-all';
     quizFeedbackIcon.className = 'ti ti-circle-check text-2xl text-emerald-800 mt-0.5';
-    quizFeedbackTitle.textContent = 'Jawaban Benar! (+20 Poin)';
+    quizFeedbackTitle.textContent = `Jawaban Benar! (+${Math.round(pointsPerQuestion)} Poin)`;
   } else {
     quizFeedbackBanner.className = 'p-4 rounded-2xl border border-rose-300 bg-rose-100 text-rose-950 transition-all';
     quizFeedbackIcon.className = 'ti ti-alert-circle text-2xl text-rose-800 mt-0.5';
@@ -1210,17 +1270,21 @@ function handleNextQuestion() {
 }
 
 /**
- * Menampilkan layar skor akhir dan mengecek highscore di localStorage
+ * Menampilkan layar skor akhir (skala dinamis 100) dan update highscore di localStorage
  */
 function showQuizResult() {
   quizScreenQuestion.classList.add('hidden');
   quizScreenResult.classList.remove('hidden');
 
-  const maxScore = QUIZ_QUESTIONS.length * 20;
-  quizFinalScore.textContent = `${quizScore} / ${maxScore}`;
+  const totalQuestions = QUIZ_QUESTIONS.length;
+  // Skor dinamis terhitung tepat dari persentase jawaban benar
+  const finalScore = Math.min(100, Math.round((correctAnswersCount / totalQuestions) * 100));
+  quizScore = finalScore;
 
-  const accuracy = Math.round((quizScore / maxScore) * 100);
-  quizScorePercentage.textContent = `Tingkat Akurasi: ${accuracy}%`;
+  quizFinalScore.textContent = `${quizScore} / 100`;
+
+  const accuracy = Math.round((correctAnswersCount / totalQuestions) * 100);
+  quizScorePercentage.textContent = `Tingkat Akurasi: ${accuracy}% (${correctAnswersCount} dari ${totalQuestions} soal benar)`;
 
   // Cek & update Highscore
   const previousHighScore = Number(localStorage.getItem(STORAGE_KEYS.QUIZ_HIGHSCORE)) || 0;
@@ -1245,7 +1309,7 @@ function restartQuiz() {
 }
 
 // =============================================================================
-// 7. INITIALIZATION & EVENT LISTENERS
+// 8. INITIALIZATION & EVENT LISTENERS
 // =============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1254,7 +1318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     expenseInputDate.value = getTodayDateString();
   }
 
-  // Tampilkan jumlah total soal pada layar kuis awal
+  // Tampilkan jumlah total soal pada layar kuis awal secara dinamis
   if (quizTotalQuestionsStart) {
     quizTotalQuestionsStart.textContent = QUIZ_QUESTIONS.length;
   }
@@ -1282,7 +1346,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Handle tombol Back/Forward browser
-  window.addEventListener('popstate', (e) => {
+  window.addEventListener('popstate', () => {
     const tabFromUrl = getActiveTabFromUrl();
     switchTab(tabFromUrl, false);
   });
