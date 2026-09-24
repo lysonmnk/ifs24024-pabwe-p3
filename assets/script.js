@@ -1,122 +1,39 @@
 /**
- * Praktikum 3 — JavaScript (Studi Kasus)
- * Single Page Application (SPA): Expense Tracker, Bookmark Manager, Quiz App
- * Tanpa Backend / API - Menggunakan Web Storage API (localStorage) & Query String Routing
+ * Konstanta kelas CSS terpusat untuk state dinamis UI
+ * Mencegah duplikasi string className dan menjaga sinkronisasi dengan markup HTML
  */
+const UI_CLASSES = {
+  TAB: {
+    ACTIVE: ['bg-white', 'text-indigo-700', 'shadow-sm', 'border-slate-200', 'font-bold'],
+    INACTIVE: ['text-slate-700', 'hover:text-slate-900', 'hover:bg-slate-200/60', 'font-semibold', 'border-transparent'],
+  },
+  QUIZ_OPTION: {
+    BASE: ['quiz-option-btn', 'w-full', 'p-4', 'text-left', 'rounded-2xl', 'font-bold', 'text-sm', 'transition', 'duration-150', 'flex', 'items-center', 'justify-between', 'group'],
+    INTERACTIVE: ['border', 'border-slate-300', 'bg-slate-50', 'text-slate-900', 'hover:bg-indigo-100', 'hover:border-indigo-400', 'cursor-pointer'],
+    CORRECT: ['border-2', 'border-emerald-700', 'bg-emerald-100', 'text-emerald-950', 'font-bold'],
+    INCORRECT: ['border-2', 'border-rose-700', 'bg-rose-100', 'text-rose-950', 'font-bold'],
+    MUTED: ['opacity-60'],
+  },
+  QUIZ_FEEDBACK: {
+    BASE: ['p-4', 'rounded-2xl', 'border', 'transition-all'],
+    CORRECT_BANNER: ['border-emerald-300', 'bg-emerald-100', 'text-emerald-950'],
+    INCORRECT_BANNER: ['border-rose-300', 'bg-rose-100', 'text-rose-950'],
+    CORRECT_ICON: ['ti-circle-check', 'text-emerald-800'],
+    INCORRECT_ICON: ['ti-alert-circle', 'text-rose-800'],
+  },
+  QUIZ_ICON: {
+    CORRECT: ['ti-check', 'text-emerald-800', 'opacity-100'],
+    INCORRECT: ['ti-x', 'text-rose-800', 'opacity-100'],
+  },
+  BALANCE: {
+    NEGATIVE: 'text-rose-800',
+    POSITIVE: 'text-emerald-800',
+    ZERO: 'text-slate-900',
+  }
+};
 
 // =============================================================================
-// 1. HELPER & UTILITIES
-// =============================================================================
-
-/**
- * Format angka ke mata uang Rupiah (IDR)
- * @param {number} amount
- * @returns {string} Contoh: "Rp 50.000"
- */
-function formatRupiah(amount) {
-  const num = Number(amount) || 0;
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(num);
-}
-
-/**
- * Format tanggal string YYYY-MM-DD ke format lokal Indonesia
- * @param {string} dateString 
- * @returns {string} Contoh: "12 Des 2025"
- */
-function formatDateIndo(dateString) {
-  if (!dateString) return '-';
-  const parts = dateString.split('-');
-  if (parts.length !== 3) return dateString;
-  const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-  return new Intl.DateTimeFormat('id-ID', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(dateObj);
-}
-
-/**
- * Mengambil tanggal hari ini dalam format YYYY-MM-DD
- * @returns {string}
- */
-function getTodayDateString() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = String(now.getMonth() + 1).padStart(2, '0');
-  const day = String(now.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-/**
- * Escape string HTML untuk mencegah Cross-Site Scripting (XSS)
- * @param {string} str 
- * @returns {string}
- */
-function escapeHtml(str) {
-  if (typeof str !== 'string') return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
-}
-
-/**
- * Validasi ketat format URL (harus diawali http:// atau https://)
- * @param {string} urlString 
- * @returns {boolean}
- */
-function isValidHttpUrl(urlString) {
-  if (!urlString || typeof urlString !== 'string') return false;
-  const trimmed = urlString.trim();
-  const urlRegex = /^https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+$/i;
-  if (!urlRegex.test(trimmed)) return false;
-
-  try {
-    const parsed = new URL(trimmed);
-    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Helper pembacaan data aman dari localStorage
- * @param {string} key 
- * @param {*} defaultValue 
- * @returns {*}
- */
-function getStorage(key, defaultValue) {
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : defaultValue;
-  } catch (e) {
-    console.error(`Gagal membaca key "${key}" dari localStorage:`, e);
-    return defaultValue;
-  }
-}
-
-/**
- * Helper penyimpanan data aman ke localStorage
- * @param {string} key 
- * @param {*} value 
- */
-function setStorage(key, value) {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch (e) {
-    console.error(`Gagal menyimpan key "${key}" ke localStorage:`, e);
-  }
-}
-
-// =============================================================================
-// 2. FORM VALIDATION HELPERS (DRY & REUSABLE FIELD CONFIGURATION)
+// 3. FORM VALIDATION HELPERS (DRY & REUSABLE FIELD CONFIGURATION)
 // =============================================================================
 
 /**
@@ -231,7 +148,7 @@ function validateBookmarkInputs(data, errorEls = {}) {
 }
 
 // =============================================================================
-// 3. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA)
+// 4. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA DENGAN CLASSLIST.TOGGLE)
 // =============================================================================
 
 const STORAGE_KEYS = {
@@ -257,7 +174,7 @@ function getActiveTabFromUrl() {
 }
 
 /**
- * Mengganti tab aktif di tampilan dan memperbarui URL tanpa refresh
+ * Mengganti tab aktif menggunakan classList.toggle terpusat dan update URL tanpa reload
  * @param {string} targetTab 
  * @param {boolean} [pushHistory=false] 
  */
@@ -275,18 +192,15 @@ function switchTab(targetTab, pushHistory = false) {
     activePanel.classList.remove('hidden');
   }
 
-  // Update styling tombol navigasi tab dengan role="tab" dan aria-selected
+  // Update styling tombol tab menggunakan classList.toggle dari konstanta UI_CLASSES.TAB
   document.querySelectorAll('.tab-btn').forEach(btn => {
     const tabName = btn.dataset.tab;
     const isCurrent = tabName === safeTab;
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
 
-    if (isCurrent) {
-      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm border border-slate-200';
-    } else {
-      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200/60';
-    }
+    UI_CLASSES.TAB.ACTIVE.forEach(cls => btn.classList.toggle(cls, isCurrent));
+    UI_CLASSES.TAB.INACTIVE.forEach(cls => btn.classList.toggle(cls, !isCurrent));
   });
 
   // Sinkronisasi query string di URL
@@ -312,7 +226,7 @@ function switchTab(targetTab, pushHistory = false) {
 }
 
 // =============================================================================
-// 4. GLOBAL MODAL CONFIRMATION DIALOG (REUSABLE)
+// 5. GLOBAL MODAL CONFIRMATION DIALOG (REUSABLE)
 // =============================================================================
 
 let onConfirmDeleteCallback = null;
@@ -347,28 +261,31 @@ function hideDeleteConfirmation() {
 }
 
 // =============================================================================
-// 5. EXPENSE TRACKER FEATURE
+// 6. EXPENSE TRACKER FEATURE
 // =============================================================================
 
 /**
- * Data awal bawaan jika localStorage masih kosong
+ * Data contoh bawaan (Seed/Demo Data)
+ * Diberikan penanda '[Contoh]' yang jelas agar tidak dianggap sebagai data transaksi pengguna nyata.
  */
 const DEFAULT_EXPENSES = [
   {
-    id: 'e-' + (Date.now() - 3600000 * 24 * 2),
-    title: 'Gaji Bulanan',
+    id: 'demo-exp-1',
+    title: '[Contoh] Gaji Bulanan',
     category: 'Gaji',
     amount: 5000000,
     type: 'income',
     date: getTodayDateString(),
+    isDemoData: true,
   },
   {
-    id: 'e-' + (Date.now() - 3600000 * 24),
-    title: 'Belanja Mingguan',
+    id: 'demo-exp-2',
+    title: '[Contoh] Belanja Mingguan',
     category: 'Belanja',
     amount: 350000,
     type: 'expense',
     date: getTodayDateString(),
+    isDemoData: true,
   }
 ];
 
@@ -431,13 +348,14 @@ function updateExpenseSummary() {
   expenseTotalExpenseDisplay.textContent = formatRupiah(totalExpense);
   expenseBalanceDisplay.textContent = formatRupiah(balance);
 
-  // Pewarnaan saldo dengan rasio kontras tinggi (> 7:1)
+  // Pewarnaan saldo dinamis menggunakan classList dan konstanta UI_CLASSES.BALANCE
+  expenseBalanceDisplay.classList.remove(UI_CLASSES.BALANCE.NEGATIVE, UI_CLASSES.BALANCE.POSITIVE, UI_CLASSES.BALANCE.ZERO);
   if (balance < 0) {
-    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-rose-800 mt-3 truncate tracking-tight';
+    expenseBalanceDisplay.classList.add(UI_CLASSES.BALANCE.NEGATIVE);
   } else if (balance > 0) {
-    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-emerald-800 mt-3 truncate tracking-tight';
+    expenseBalanceDisplay.classList.add(UI_CLASSES.BALANCE.POSITIVE);
   } else {
-    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 truncate tracking-tight';
+    expenseBalanceDisplay.classList.add(UI_CLASSES.BALANCE.ZERO);
   }
 }
 
@@ -502,9 +420,8 @@ function renderExpenses() {
   list.forEach(item => {
     const isIncome = item.type === 'income';
     const row = document.createElement('div');
-    row.className = 'p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition-colors gap-3';
+    row.classList.add('p-4', 'sm:p-5', 'flex', 'items-center', 'justify-between', 'hover:bg-slate-50', 'transition-colors', 'gap-3');
 
-    // Warna dengan kontras > 4.5:1 untuk teks dan > 3:1 untuk latar grafis
     const iconBg = isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
     const iconClass = isIncome ? 'ti-arrow-up-right' : 'ti-arrow-down-left';
     const amountColor = isIncome ? 'text-emerald-800' : 'text-rose-800';
@@ -697,29 +614,48 @@ function promptDeleteExpense(id) {
   );
 }
 
+/**
+ * Opsi reset data transaksi pengguna ke daftar kosong
+ */
+function promptResetExpenses() {
+  showDeleteConfirmation(
+    'Kosongkan Semua Transaksi',
+    'Apakah Anda yakin ingin mengosongkan semua data transaksi dan memulai dari daftar kosong?',
+    () => {
+      expenses = [];
+      setStorage(STORAGE_KEYS.EXPENSE, expenses);
+      renderExpenses();
+      hideDeleteConfirmation();
+    }
+  );
+}
+
 // =============================================================================
-// 6. BOOKMARK MANAGER FEATURE
+// 7. BOOKMARK MANAGER FEATURE
 // =============================================================================
 
 /**
- * Data awal bawaan Bookmark jika belum ada di localStorage
+ * Data contoh bawaan (Seed/Demo Data)
+ * Diberikan penanda '[Contoh]' yang jelas agar tidak dianggap sebagai data bookmark pengguna nyata.
  */
 const DEFAULT_BOOKMARKS = [
   {
-    id: 'b-' + (Date.now() - 7200000),
-    title: 'MDN Web Docs',
+    id: 'demo-bm-1',
+    title: '[Contoh] MDN Web Docs',
     url: 'https://developer.mozilla.org',
     category: 'Dokumentasi',
-    note: 'Referensi resmi dokumentasi Web dan JavaScript',
-    createdAt: Date.now() - 7200000
+    note: 'Data contoh referensi dokumentasi Web dan JavaScript',
+    createdAt: Date.now() - 7200000,
+    isDemoData: true,
   },
   {
-    id: 'b-' + (Date.now() - 3600000),
-    title: 'Tailwind CSS Documentation',
+    id: 'demo-bm-2',
+    title: '[Contoh] Tailwind CSS Documentation',
     url: 'https://tailwindcss.com/docs',
     category: 'Desain',
-    note: 'Katalog utility class Tailwind CSS',
-    createdAt: Date.now() - 3600000
+    note: 'Data contoh katalog utility class Tailwind CSS',
+    createdAt: Date.now() - 3600000,
+    isDemoData: true,
   }
 ];
 
@@ -806,7 +742,7 @@ function renderBookmarks() {
 
   list.forEach(item => {
     const card = document.createElement('div');
-    card.className = 'bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between';
+    card.classList.add('bg-white', 'rounded-2xl', 'p-5', 'border', 'border-slate-200', 'shadow-sm', 'hover:shadow-md', 'transition', 'duration-200', 'flex', 'flex-col', 'justify-between');
 
     card.innerHTML = `
       <div class="space-y-3">
@@ -995,8 +931,24 @@ function promptDeleteBookmark(id) {
   );
 }
 
+/**
+ * Opsi reset data bookmark pengguna ke daftar kosong
+ */
+function promptResetBookmarks() {
+  showDeleteConfirmation(
+    'Kosongkan Semua Bookmark',
+    'Apakah Anda yakin ingin mengosongkan semua bookmark dan memulai dari daftar kosong?',
+    () => {
+      bookmarks = [];
+      setStorage(STORAGE_KEYS.BOOKMARK, bookmarks);
+      renderBookmarks();
+      hideDeleteConfirmation();
+    }
+  );
+}
+
 // =============================================================================
-// 7. QUIZ APP FEATURE (DYNAMIC SCORING BERBASIS SKALA 100)
+// 8. QUIZ APP FEATURE (DYNAMIC SCORING BERBASIS SKALA 100)
 // =============================================================================
 
 /**
@@ -1173,7 +1125,7 @@ function renderCurrentQuestion() {
   question.options.forEach((optText, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border border-slate-300 bg-slate-50 hover:bg-indigo-100 hover:border-indigo-400 font-bold text-sm text-slate-900 transition duration-150 flex items-center justify-between group';
+    btn.classList.add(...UI_CLASSES.QUIZ_OPTION.BASE, ...UI_CLASSES.QUIZ_OPTION.INTERACTIVE);
     btn.dataset.index = index;
 
     btn.innerHTML = `
@@ -1191,7 +1143,7 @@ function renderCurrentQuestion() {
 }
 
 /**
- * Handle ketika pengguna memilih jawaban opsi dengan skor proporsional dinamis
+ * Handle ketika pengguna memilih jawaban opsi menggunakan classList terpusat
  * @param {number} selectedIndex 
  */
 function handleSelectAnswer(selectedIndex) {
@@ -1205,48 +1157,56 @@ function handleSelectAnswer(selectedIndex) {
 
   if (isCorrect) {
     correctAnswersCount++;
-    // Perhitungan skor dinamis proporsional menuju 100 poin
+    // Perhitungan skor dinamis proporsional menuju skala 100
     quizScore = Math.min(100, Math.round((correctAnswersCount / totalQuestions) * 100));
   }
 
   quizCurrentScoreTag.textContent = `Skor: ${quizScore}`;
 
-  // Berikan visual feedback pada setiap tombol
+  // Berikan visual feedback menggunakan konstanta UI_CLASSES.QUIZ_OPTION
   const allOptionBtns = quizOptionsContainer.querySelectorAll('.quiz-option-btn');
   allOptionBtns.forEach((btn) => {
     const idx = Number(btn.dataset.index);
     btn.disabled = true;
-    btn.classList.remove('hover:bg-indigo-100', 'hover:border-indigo-400', 'cursor-pointer');
+    UI_CLASSES.QUIZ_OPTION.INTERACTIVE.forEach(cls => btn.classList.remove(cls));
     btn.classList.add('cursor-default');
 
     const icon = btn.querySelector('.quiz-option-icon');
 
     if (idx === currentQ.answer) {
       // Jawaban benar (hijau kontras tinggi)
-      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-emerald-700 bg-emerald-100 text-emerald-950 font-bold text-sm flex items-center justify-between';
+      btn.classList.remove('border-slate-300', 'bg-slate-50');
+      UI_CLASSES.QUIZ_OPTION.CORRECT.forEach(cls => btn.classList.add(cls));
       if (icon) {
-        icon.className = 'quiz-option-icon ti ti-check text-emerald-800 text-xl opacity-100';
+        icon.classList.remove('opacity-0');
+        UI_CLASSES.QUIZ_ICON.CORRECT.forEach(cls => icon.classList.add(cls));
       }
     } else if (idx === selectedIndex && !isCorrect) {
       // Jawaban salah yang dipilih (merah kontras tinggi)
-      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-rose-700 bg-rose-100 text-rose-950 font-bold text-sm flex items-center justify-between';
+      btn.classList.remove('border-slate-300', 'bg-slate-50');
+      UI_CLASSES.QUIZ_OPTION.INCORRECT.forEach(cls => btn.classList.add(cls));
       if (icon) {
-        icon.className = 'quiz-option-icon ti ti-x text-rose-800 text-xl opacity-100';
+        icon.classList.remove('opacity-0');
+        UI_CLASSES.QUIZ_ICON.INCORRECT.forEach(cls => icon.classList.add(cls));
       }
     } else {
-      btn.classList.add('opacity-60');
+      UI_CLASSES.QUIZ_OPTION.MUTED.forEach(cls => btn.classList.add(cls));
     }
   });
 
-  // Tampilkan feedback banner dengan nilai poin dinamis
+  // Tampilkan feedback banner dengan nilai poin dinamis menggunakan konstanta UI_CLASSES.QUIZ_FEEDBACK
   quizFeedbackBanner.classList.remove('hidden');
+  UI_CLASSES.QUIZ_FEEDBACK.BASE.forEach(cls => quizFeedbackBanner.classList.add(cls));
+  UI_CLASSES.QUIZ_FEEDBACK.CORRECT_BANNER.forEach(cls => quizFeedbackBanner.classList.toggle(cls, isCorrect));
+  UI_CLASSES.QUIZ_FEEDBACK.INCORRECT_BANNER.forEach(cls => quizFeedbackBanner.classList.toggle(cls, !isCorrect));
+
+  quizFeedbackIcon.classList.remove('ti-circle-check', 'ti-alert-circle', 'text-emerald-800', 'text-rose-800');
+  quizFeedbackIcon.classList.add('text-2xl', 'mt-0.5');
   if (isCorrect) {
-    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-emerald-300 bg-emerald-100 text-emerald-950 transition-all';
-    quizFeedbackIcon.className = 'ti ti-circle-check text-2xl text-emerald-800 mt-0.5';
+    UI_CLASSES.QUIZ_FEEDBACK.CORRECT_ICON.forEach(cls => quizFeedbackIcon.classList.add(cls));
     quizFeedbackTitle.textContent = `Jawaban Benar! (+${Math.round(pointsPerQuestion)} Poin)`;
   } else {
-    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-rose-300 bg-rose-100 text-rose-950 transition-all';
-    quizFeedbackIcon.className = 'ti ti-alert-circle text-2xl text-rose-800 mt-0.5';
+    UI_CLASSES.QUIZ_FEEDBACK.INCORRECT_ICON.forEach(cls => quizFeedbackIcon.classList.add(cls));
     quizFeedbackTitle.textContent = 'Jawaban Kurang Tepat';
   }
   quizFeedbackMessage.textContent = currentQ.explanation;
@@ -1309,7 +1269,7 @@ function restartQuiz() {
 }
 
 // =============================================================================
-// 8. INITIALIZATION & EVENT LISTENERS
+// 9. INITIALIZATION & EVENT LISTENERS
 // =============================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1370,6 +1330,12 @@ document.addEventListener('DOMContentLoaded', () => {
     expenseSortBy.addEventListener('change', renderExpenses);
   }
 
+  // Tombol Reset Data Expense
+  const expenseBtnReset = document.getElementById('expense-btn-reset');
+  if (expenseBtnReset) {
+    expenseBtnReset.addEventListener('click', promptResetExpenses);
+  }
+
   // Event delegation untuk Edit & Delete Transaksi
   if (expenseListContainer) {
     expenseListContainer.addEventListener('click', (e) => {
@@ -1411,6 +1377,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (bookmarkSortBy) {
     bookmarkSortBy.addEventListener('change', renderBookmarks);
+  }
+
+  // Tombol Reset Data Bookmark
+  const bookmarkBtnReset = document.getElementById('bookmark-btn-reset');
+  if (bookmarkBtnReset) {
+    bookmarkBtnReset.addEventListener('click', promptResetBookmarks);
   }
 
   // Event delegation untuk Edit & Delete Bookmark
