@@ -1,39 +1,122 @@
 /**
- * Konstanta kelas CSS terpusat untuk state dinamis UI
- * Mencegah duplikasi string className dan menjaga sinkronisasi dengan markup HTML
+ * Praktikum 3 — JavaScript (Studi Kasus)
+ * Single Page Application (SPA): Expense Tracker, Bookmark Manager, Quiz App
+ * Tanpa Backend / API - Menggunakan Web Storage API (localStorage) & Query String Routing
  */
-const UI_CLASSES = {
-  TAB: {
-    ACTIVE: ['bg-white', 'text-indigo-700', 'shadow-sm', 'border-slate-200', 'font-bold'],
-    INACTIVE: ['text-slate-700', 'hover:text-slate-900', 'hover:bg-slate-200/60', 'font-semibold', 'border-transparent'],
-  },
-  QUIZ_OPTION: {
-    BASE: ['quiz-option-btn', 'w-full', 'p-4', 'text-left', 'rounded-2xl', 'font-bold', 'text-sm', 'transition', 'duration-150', 'flex', 'items-center', 'justify-between', 'group'],
-    INTERACTIVE: ['border', 'border-slate-300', 'bg-slate-50', 'text-slate-900', 'hover:bg-indigo-100', 'hover:border-indigo-400', 'cursor-pointer'],
-    CORRECT: ['border-2', 'border-emerald-700', 'bg-emerald-100', 'text-emerald-950', 'font-bold'],
-    INCORRECT: ['border-2', 'border-rose-700', 'bg-rose-100', 'text-rose-950', 'font-bold'],
-    MUTED: ['opacity-60'],
-  },
-  QUIZ_FEEDBACK: {
-    BASE: ['p-4', 'rounded-2xl', 'border', 'transition-all'],
-    CORRECT_BANNER: ['border-emerald-300', 'bg-emerald-100', 'text-emerald-950'],
-    INCORRECT_BANNER: ['border-rose-300', 'bg-rose-100', 'text-rose-950'],
-    CORRECT_ICON: ['ti-circle-check', 'text-emerald-800'],
-    INCORRECT_ICON: ['ti-alert-circle', 'text-rose-800'],
-  },
-  QUIZ_ICON: {
-    CORRECT: ['ti-check', 'text-emerald-800', 'opacity-100'],
-    INCORRECT: ['ti-x', 'text-rose-800', 'opacity-100'],
-  },
-  BALANCE: {
-    NEGATIVE: 'text-rose-800',
-    POSITIVE: 'text-emerald-800',
-    ZERO: 'text-slate-900',
-  }
-};
 
 // =============================================================================
-// 3. FORM VALIDATION HELPERS (DRY & REUSABLE FIELD CONFIGURATION)
+// 1. HELPER & UTILITIES
+// =============================================================================
+
+/**
+ * Format angka ke mata uang Rupiah (IDR)
+ * @param {number} amount
+ * @returns {string} Contoh: "Rp 50.000"
+ */
+function formatRupiah(amount) {
+  const num = Number(amount) || 0;
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(num);
+}
+
+/**
+ * Format tanggal string YYYY-MM-DD ke format lokal Indonesia
+ * @param {string} dateString 
+ * @returns {string} Contoh: "12 Des 2025"
+ */
+function formatDateIndo(dateString) {
+  if (!dateString) return '-';
+  const parts = dateString.split('-');
+  if (parts.length !== 3) return dateString;
+  const dateObj = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+  return new Intl.DateTimeFormat('id-ID', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+  }).format(dateObj);
+}
+
+/**
+ * Mengambil tanggal hari ini dalam format YYYY-MM-DD
+ * @returns {string}
+ */
+function getTodayDateString() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+/**
+ * Escape string HTML untuk mencegah Cross-Site Scripting (XSS)
+ * @param {string} str 
+ * @returns {string}
+ */
+function escapeHtml(str) {
+  if (typeof str !== 'string') return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
+ * Validasi ketat format URL (harus diawali http:// atau https://)
+ * @param {string} urlString 
+ * @returns {boolean}
+ */
+function isValidHttpUrl(urlString) {
+  if (!urlString || typeof urlString !== 'string') return false;
+  const trimmed = urlString.trim();
+  const urlRegex = /^https?:\/\/[a-zA-Z0-9\-._~:/?#[\]@!$&'()*+,;=]+$/i;
+  if (!urlRegex.test(trimmed)) return false;
+
+  try {
+    const parsed = new URL(trimmed);
+    return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Helper pembacaan data aman dari localStorage
+ * @param {string} key 
+ * @param {*} defaultValue 
+ * @returns {*}
+ */
+function getStorage(key, defaultValue) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : defaultValue;
+  } catch (e) {
+    console.error(`Gagal membaca key "${key}" dari localStorage:`, e);
+    return defaultValue;
+  }
+}
+
+/**
+ * Helper penyimpanan data aman ke localStorage
+ * @param {string} key 
+ * @param {*} value 
+ */
+function setStorage(key, value) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.error(`Gagal menyimpan key "${key}" ke localStorage:`, e);
+  }
+}
+
+// =============================================================================
+// 2. FORM VALIDATION HELPERS (DRY & REUSABLE FIELD CONFIGURATION)
 // =============================================================================
 
 /**
@@ -148,7 +231,7 @@ function validateBookmarkInputs(data, errorEls = {}) {
 }
 
 // =============================================================================
-// 4. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA DENGAN CLASSLIST.TOGGLE)
+// 3. TAB ROUTER (QUERY STRING MANAGEMENT & WAI-ARIA)
 // =============================================================================
 
 const STORAGE_KEYS = {
@@ -174,7 +257,7 @@ function getActiveTabFromUrl() {
 }
 
 /**
- * Mengganti tab aktif menggunakan classList.toggle terpusat dan update URL tanpa reload
+ * Mengganti tab aktif di tampilan dan memperbarui URL tanpa refresh
  * @param {string} targetTab 
  * @param {boolean} [pushHistory=false] 
  */
@@ -192,15 +275,18 @@ function switchTab(targetTab, pushHistory = false) {
     activePanel.classList.remove('hidden');
   }
 
-  // Update styling tombol tab menggunakan classList.toggle dari konstanta UI_CLASSES.TAB
+  // Update styling tombol navigasi tab dengan role="tab" dan aria-selected
   document.querySelectorAll('.tab-btn').forEach(btn => {
     const tabName = btn.dataset.tab;
     const isCurrent = tabName === safeTab;
     btn.setAttribute('role', 'tab');
     btn.setAttribute('aria-selected', isCurrent ? 'true' : 'false');
 
-    UI_CLASSES.TAB.ACTIVE.forEach(cls => btn.classList.toggle(cls, isCurrent));
-    UI_CLASSES.TAB.INACTIVE.forEach(cls => btn.classList.toggle(cls, !isCurrent));
+    if (isCurrent) {
+      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-bold rounded-lg transition-all duration-200 flex items-center gap-1.5 bg-white text-indigo-700 shadow-sm border border-slate-200';
+    } else {
+      btn.className = 'tab-btn px-3 sm:px-4 py-2 text-xs sm:text-sm font-semibold rounded-lg transition-all duration-200 flex items-center gap-1.5 text-slate-700 hover:text-slate-900 hover:bg-slate-200/60';
+    }
   });
 
   // Sinkronisasi query string di URL
@@ -226,13 +312,16 @@ function switchTab(targetTab, pushHistory = false) {
 }
 
 // =============================================================================
-// 5. GLOBAL MODAL CONFIRMATION DIALOG (REUSABLE)
+// 4. GLOBAL MODAL CONFIRMATION DIALOG (REUSABLE)
 // =============================================================================
 
 let onConfirmDeleteCallback = null;
 
-// Referensi elemen DOM Modal Konfirmasi Hapus (diinisialisasi saat DOMContentLoaded)
-let modalConfirmDelete, confirmDeleteTitle, confirmDeleteMessage, btnCancelDelete, btnProceedDelete;
+const modalConfirmDelete = document.getElementById('modal-confirm-delete');
+const confirmDeleteTitle = document.getElementById('confirm-delete-title');
+const confirmDeleteMessage = document.getElementById('confirm-delete-message');
+const btnCancelDelete = document.getElementById('btn-cancel-delete');
+const btnProceedDelete = document.getElementById('btn-proceed-delete');
 
 /**
  * Menampilkan modal konfirmasi hapus data
@@ -258,43 +347,67 @@ function hideDeleteConfirmation() {
 }
 
 // =============================================================================
-// 6. EXPENSE TRACKER FEATURE
+// 5. EXPENSE TRACKER FEATURE
 // =============================================================================
 
 /**
- * Data contoh bawaan (Seed/Demo Data)
- * Diberikan penanda '[Contoh]' yang jelas agar tidak dianggap sebagai data transaksi pengguna nyata.
+ * Data awal bawaan jika localStorage masih kosong
  */
 const DEFAULT_EXPENSES = [
   {
-    id: 'demo-exp-1',
-    title: '[Contoh] Gaji Bulanan',
+    id: 'e-' + (Date.now() - 3600000 * 24 * 2),
+    title: 'Gaji Bulanan',
     category: 'Gaji',
     amount: 5000000,
     type: 'income',
     date: getTodayDateString(),
-    isDemoData: true,
   },
   {
-    id: 'demo-exp-2',
-    title: '[Contoh] Belanja Mingguan',
+    id: 'e-' + (Date.now() - 3600000 * 24),
+    title: 'Belanja Mingguan',
     category: 'Belanja',
     amount: 350000,
     type: 'expense',
     date: getTodayDateString(),
-    isDemoData: true,
   }
 ];
 
 let expenses = getStorage(STORAGE_KEYS.EXPENSE, DEFAULT_EXPENSES);
 
-// Referensi elemen DOM Expense Tracker (diinisialisasi saat DOMContentLoaded)
-let expenseForm, expenseInputTitle, expenseInputAmount, expenseInputCategory, expenseInputDate;
-let expenseErrorTitle, expenseErrorAmount, expenseErrorDate;
-let expenseBalanceDisplay, expenseTotalIncomeDisplay, expenseTotalExpenseDisplay;
-let expenseSearchInput, expenseFilterType, expenseSortBy, expenseListContainer, expenseEmptyState, expenseCounter, expenseBtnReset;
-let modalEditExpense, formEditExpense, editExpenseId, editExpenseTitle, editExpenseAmount, editExpenseCategory, editExpenseDate;
-let editExpenseErrorTitle, editExpenseErrorAmount, editExpenseErrorDate, modalCloseEditExpense, modalCancelEditExpense;
+// Elemen DOM Expense Tracker
+const expenseForm = document.getElementById('expense-form');
+const expenseInputTitle = document.getElementById('expense-input-title');
+const expenseInputAmount = document.getElementById('expense-input-amount');
+const expenseInputCategory = document.getElementById('expense-input-category');
+const expenseInputDate = document.getElementById('expense-input-date');
+const expenseErrorTitle = document.getElementById('expense-error-title');
+const expenseErrorAmount = document.getElementById('expense-error-amount');
+const expenseErrorDate = document.getElementById('expense-error-date');
+
+const expenseBalanceDisplay = document.getElementById('expense-balance');
+const expenseTotalIncomeDisplay = document.getElementById('expense-total-income');
+const expenseTotalExpenseDisplay = document.getElementById('expense-total-expense');
+
+const expenseSearchInput = document.getElementById('expense-search');
+const expenseFilterType = document.getElementById('expense-filter-type');
+const expenseSortBy = document.getElementById('expense-sort-by');
+const expenseListContainer = document.getElementById('expense-list-container');
+const expenseEmptyState = document.getElementById('expense-empty-state');
+const expenseCounter = document.getElementById('expense-counter');
+
+// Modal Edit Expense
+const modalEditExpense = document.getElementById('modal-edit-expense');
+const formEditExpense = document.getElementById('form-edit-expense');
+const editExpenseId = document.getElementById('edit-expense-id');
+const editExpenseTitle = document.getElementById('edit-expense-title');
+const editExpenseAmount = document.getElementById('edit-expense-amount');
+const editExpenseCategory = document.getElementById('edit-expense-category');
+const editExpenseDate = document.getElementById('edit-expense-date');
+const editExpenseErrorTitle = document.getElementById('edit-expense-error-title');
+const editExpenseErrorAmount = document.getElementById('edit-expense-error-amount');
+const editExpenseErrorDate = document.getElementById('edit-expense-error-date');
+const modalCloseEditExpense = document.getElementById('modal-close-edit-expense');
+const modalCancelEditExpense = document.getElementById('modal-cancel-edit-expense');
 
 /**
  * Menghitung dan memperbarui kartu ringkasan (Summary Cards)
@@ -318,14 +431,13 @@ function updateExpenseSummary() {
   expenseTotalExpenseDisplay.textContent = formatRupiah(totalExpense);
   expenseBalanceDisplay.textContent = formatRupiah(balance);
 
-  // Pewarnaan saldo dinamis menggunakan classList dan konstanta UI_CLASSES.BALANCE
-  expenseBalanceDisplay.classList.remove(UI_CLASSES.BALANCE.NEGATIVE, UI_CLASSES.BALANCE.POSITIVE, UI_CLASSES.BALANCE.ZERO);
+  // Pewarnaan saldo dengan rasio kontras tinggi (> 7:1)
   if (balance < 0) {
-    expenseBalanceDisplay.classList.add(UI_CLASSES.BALANCE.NEGATIVE);
+    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-rose-800 mt-3 truncate tracking-tight';
   } else if (balance > 0) {
-    expenseBalanceDisplay.classList.add(UI_CLASSES.BALANCE.POSITIVE);
+    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-emerald-800 mt-3 truncate tracking-tight';
   } else {
-    expenseBalanceDisplay.classList.add(UI_CLASSES.BALANCE.ZERO);
+    expenseBalanceDisplay.className = 'text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3 truncate tracking-tight';
   }
 }
 
@@ -390,8 +502,9 @@ function renderExpenses() {
   list.forEach(item => {
     const isIncome = item.type === 'income';
     const row = document.createElement('div');
-    row.classList.add('p-4', 'sm:p-5', 'flex', 'items-center', 'justify-between', 'hover:bg-slate-50', 'transition-colors', 'gap-3');
+    row.className = 'p-4 sm:p-5 flex items-center justify-between hover:bg-slate-50 transition-colors gap-3';
 
+    // Warna dengan kontras > 4.5:1 untuk teks dan > 3:1 untuk latar grafis
     const iconBg = isIncome ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800';
     const iconClass = isIncome ? 'ti-arrow-up-right' : 'ti-arrow-down-left';
     const amountColor = isIncome ? 'text-emerald-800' : 'text-rose-800';
@@ -584,59 +697,61 @@ function promptDeleteExpense(id) {
   );
 }
 
-/**
- * Opsi reset data transaksi pengguna ke daftar kosong
- */
-function promptResetExpenses() {
-  showDeleteConfirmation(
-    'Kosongkan Semua Transaksi',
-    'Apakah Anda yakin ingin mengosongkan semua data transaksi dan memulai dari daftar kosong?',
-    () => {
-      expenses = [];
-      setStorage(STORAGE_KEYS.EXPENSE, expenses);
-      renderExpenses();
-      hideDeleteConfirmation();
-    }
-  );
-}
-
 // =============================================================================
-// 7. BOOKMARK MANAGER FEATURE
+// 6. BOOKMARK MANAGER FEATURE
 // =============================================================================
 
 /**
- * Data contoh bawaan (Seed/Demo Data)
- * Diberikan penanda '[Contoh]' yang jelas agar tidak dianggap sebagai data bookmark pengguna nyata.
+ * Data awal bawaan Bookmark jika belum ada di localStorage
  */
 const DEFAULT_BOOKMARKS = [
   {
-    id: 'demo-bm-1',
-    title: '[Contoh] MDN Web Docs',
+    id: 'b-' + (Date.now() - 7200000),
+    title: 'MDN Web Docs',
     url: 'https://developer.mozilla.org',
     category: 'Dokumentasi',
-    note: 'Data contoh referensi dokumentasi Web dan JavaScript',
-    createdAt: Date.now() - 7200000,
-    isDemoData: true,
+    note: 'Referensi resmi dokumentasi Web dan JavaScript',
+    createdAt: Date.now() - 7200000
   },
   {
-    id: 'demo-bm-2',
-    title: '[Contoh] Tailwind CSS Documentation',
+    id: 'b-' + (Date.now() - 3600000),
+    title: 'Tailwind CSS Documentation',
     url: 'https://tailwindcss.com/docs',
     category: 'Desain',
-    note: 'Data contoh katalog utility class Tailwind CSS',
-    createdAt: Date.now() - 3600000,
-    isDemoData: true,
+    note: 'Katalog utility class Tailwind CSS',
+    createdAt: Date.now() - 3600000
   }
 ];
 
 let bookmarks = getStorage(STORAGE_KEYS.BOOKMARK, DEFAULT_BOOKMARKS);
 
-// Referensi elemen DOM Bookmark (diinisialisasi saat DOMContentLoaded)
-let bookmarkForm, bookmarkInputTitle, bookmarkInputUrl, bookmarkInputCategory, bookmarkInputNote;
-let bookmarkErrorTitle, bookmarkErrorUrl;
-let bookmarkSearchInput, bookmarkSortBy, bookmarkGridContainer, bookmarkEmptyState, bookmarkCounter, bookmarkBtnReset;
-let modalEditBookmark, formEditBookmark, editBookmarkId, editBookmarkTitle, editBookmarkUrl, editBookmarkCategory, editBookmarkNote;
-let editBookmarkErrorTitle, editBookmarkErrorUrl, modalCloseEditBookmark, modalCancelEditBookmark;
+// Elemen DOM Bookmark
+const bookmarkForm = document.getElementById('bookmark-form');
+const bookmarkInputTitle = document.getElementById('bookmark-input-title');
+const bookmarkInputUrl = document.getElementById('bookmark-input-url');
+const bookmarkInputCategory = document.getElementById('bookmark-input-category');
+const bookmarkInputNote = document.getElementById('bookmark-input-note');
+const bookmarkErrorTitle = document.getElementById('bookmark-error-title');
+const bookmarkErrorUrl = document.getElementById('bookmark-error-url');
+
+const bookmarkSearchInput = document.getElementById('bookmark-search');
+const bookmarkSortBy = document.getElementById('bookmark-sort-by');
+const bookmarkGridContainer = document.getElementById('bookmark-grid-container');
+const bookmarkEmptyState = document.getElementById('bookmark-empty-state');
+const bookmarkCounter = document.getElementById('bookmark-counter');
+
+// Modal Edit Bookmark
+const modalEditBookmark = document.getElementById('modal-edit-bookmark');
+const formEditBookmark = document.getElementById('form-edit-bookmark');
+const editBookmarkId = document.getElementById('edit-bookmark-id');
+const editBookmarkTitle = document.getElementById('edit-bookmark-title');
+const editBookmarkUrl = document.getElementById('edit-bookmark-url');
+const editBookmarkCategory = document.getElementById('edit-bookmark-category');
+const editBookmarkNote = document.getElementById('edit-bookmark-note');
+const editBookmarkErrorTitle = document.getElementById('edit-bookmark-error-title');
+const editBookmarkErrorUrl = document.getElementById('edit-bookmark-error-url');
+const modalCloseEditBookmark = document.getElementById('modal-close-edit-bookmark');
+const modalCancelEditBookmark = document.getElementById('modal-cancel-edit-bookmark');
 
 /**
  * Filter dan sorting bookmark
@@ -691,7 +806,7 @@ function renderBookmarks() {
 
   list.forEach(item => {
     const card = document.createElement('div');
-    card.classList.add('bg-white', 'rounded-2xl', 'p-5', 'border', 'border-slate-200', 'shadow-sm', 'hover:shadow-md', 'transition', 'duration-200', 'flex', 'flex-col', 'justify-between');
+    card.className = 'bg-white rounded-2xl p-5 border border-slate-200 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between';
 
     card.innerHTML = `
       <div class="space-y-3">
@@ -880,24 +995,8 @@ function promptDeleteBookmark(id) {
   );
 }
 
-/**
- * Opsi reset data bookmark pengguna ke daftar kosong
- */
-function promptResetBookmarks() {
-  showDeleteConfirmation(
-    'Kosongkan Semua Bookmark',
-    'Apakah Anda yakin ingin mengosongkan semua bookmark dan memulai dari daftar kosong?',
-    () => {
-      bookmarks = [];
-      setStorage(STORAGE_KEYS.BOOKMARK, bookmarks);
-      renderBookmarks();
-      hideDeleteConfirmation();
-    }
-  );
-}
-
 // =============================================================================
-// 8. QUIZ APP FEATURE (DYNAMIC SCORING BERBASIS SKALA 100)
+// 7. QUIZ APP FEATURE (DYNAMIC SCORING BERBASIS SKALA 100)
 // =============================================================================
 
 /**
@@ -984,11 +1083,31 @@ let correctAnswersCount = 0;
 let quizScore = 0;
 let isAnswerSubmitted = false;
 
-// Referensi elemen DOM Quiz (diinisialisasi saat DOMContentLoaded)
-let quizScreenStart, quizScreenQuestion, quizScreenResult, quizTotalQuestionsStart, quizHighscoreDisplay, quizBtnStart;
-let quizQuestionNumber, quizCurrentScoreTag, quizProgressBar, quizQuestionText, quizOptionsContainer;
-let quizFeedbackBanner, quizFeedbackIcon, quizFeedbackTitle, quizFeedbackMessage, quizBtnNext;
-let quizFinalScore, quizScorePercentage, quizNewHighscoreBadge, quizBtnRestart;
+// Elemen DOM Quiz
+const quizScreenStart = document.getElementById('quiz-screen-start');
+const quizScreenQuestion = document.getElementById('quiz-screen-question');
+const quizScreenResult = document.getElementById('quiz-screen-result');
+
+const quizTotalQuestionsStart = document.getElementById('quiz-total-questions-start');
+const quizHighscoreDisplay = document.getElementById('quiz-highscore-display');
+const quizBtnStart = document.getElementById('quiz-btn-start');
+
+const quizQuestionNumber = document.getElementById('quiz-question-number');
+const quizCurrentScoreTag = document.getElementById('quiz-current-score-tag');
+const quizProgressBar = document.getElementById('quiz-progress-bar');
+const quizQuestionText = document.getElementById('quiz-question-text');
+const quizOptionsContainer = document.getElementById('quiz-options-container');
+
+const quizFeedbackBanner = document.getElementById('quiz-feedback-banner');
+const quizFeedbackIcon = document.getElementById('quiz-feedback-icon');
+const quizFeedbackTitle = document.getElementById('quiz-feedback-title');
+const quizFeedbackMessage = document.getElementById('quiz-feedback-message');
+const quizBtnNext = document.getElementById('quiz-btn-next');
+
+const quizFinalScore = document.getElementById('quiz-final-score');
+const quizScorePercentage = document.getElementById('quiz-score-percentage');
+const quizNewHighscoreBadge = document.getElementById('quiz-new-highscore-badge');
+const quizBtnRestart = document.getElementById('quiz-btn-restart');
 
 /**
  * Menghitung bobot poin per soal secara dinamis berdasarkan total skala 100
@@ -1004,8 +1123,7 @@ function getDynamicPointsPerQuestion() {
  * Membaca dan menampilkan skor tertinggi (Highscore) dari localStorage
  */
 function updateQuizHighScoreDisplay() {
-  // Membaca highscore secara aman menggunakan helper getStorage
-  const currentHighScore = Number(getStorage(STORAGE_KEYS.QUIZ_HIGHSCORE, 0)) || 0;
+  const currentHighScore = Number(localStorage.getItem(STORAGE_KEYS.QUIZ_HIGHSCORE)) || 0;
   if (quizHighscoreDisplay) {
     quizHighscoreDisplay.textContent = `${currentHighScore} Poin`;
   }
@@ -1055,7 +1173,7 @@ function renderCurrentQuestion() {
   question.options.forEach((optText, index) => {
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.classList.add(...UI_CLASSES.QUIZ_OPTION.BASE, ...UI_CLASSES.QUIZ_OPTION.INTERACTIVE);
+    btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border border-slate-300 bg-slate-50 hover:bg-indigo-100 hover:border-indigo-400 font-bold text-sm text-slate-900 transition duration-150 flex items-center justify-between group';
     btn.dataset.index = index;
 
     btn.innerHTML = `
@@ -1073,7 +1191,7 @@ function renderCurrentQuestion() {
 }
 
 /**
- * Handle ketika pengguna memilih jawaban opsi menggunakan classList terpusat
+ * Handle ketika pengguna memilih jawaban opsi dengan skor proporsional dinamis
  * @param {number} selectedIndex 
  */
 function handleSelectAnswer(selectedIndex) {
@@ -1083,63 +1201,52 @@ function handleSelectAnswer(selectedIndex) {
   const currentQ = QUIZ_QUESTIONS[currentQuestionIndex];
   const isCorrect = selectedIndex === currentQ.answer;
   const totalQuestions = QUIZ_QUESTIONS.length;
+  const pointsPerQuestion = getDynamicPointsPerQuestion();
 
-  // Satukan perhitungan penambahan poin kuis agar teks feedback 100% konsisten dengan nilai skor aktual
-  let addedPoints = 0;
   if (isCorrect) {
-    const previousScore = quizScore;
     correctAnswersCount++;
-    // Perhitungan skor dinamis proporsional menuju skala 100
+    // Perhitungan skor dinamis proporsional menuju 100 poin
     quizScore = Math.min(100, Math.round((correctAnswersCount / totalQuestions) * 100));
-    addedPoints = quizScore - previousScore;
   }
 
   quizCurrentScoreTag.textContent = `Skor: ${quizScore}`;
 
-  // Berikan visual feedback menggunakan konstanta UI_CLASSES.QUIZ_OPTION
+  // Berikan visual feedback pada setiap tombol
   const allOptionBtns = quizOptionsContainer.querySelectorAll('.quiz-option-btn');
   allOptionBtns.forEach((btn) => {
     const idx = Number(btn.dataset.index);
     btn.disabled = true;
-    UI_CLASSES.QUIZ_OPTION.INTERACTIVE.forEach(cls => btn.classList.remove(cls));
+    btn.classList.remove('hover:bg-indigo-100', 'hover:border-indigo-400', 'cursor-pointer');
     btn.classList.add('cursor-default');
 
     const icon = btn.querySelector('.quiz-option-icon');
 
     if (idx === currentQ.answer) {
       // Jawaban benar (hijau kontras tinggi)
-      btn.classList.remove('border-slate-300', 'bg-slate-50');
-      UI_CLASSES.QUIZ_OPTION.CORRECT.forEach(cls => btn.classList.add(cls));
+      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-emerald-700 bg-emerald-100 text-emerald-950 font-bold text-sm flex items-center justify-between';
       if (icon) {
-        icon.classList.remove('opacity-0');
-        UI_CLASSES.QUIZ_ICON.CORRECT.forEach(cls => icon.classList.add(cls));
+        icon.className = 'quiz-option-icon ti ti-check text-emerald-800 text-xl opacity-100';
       }
     } else if (idx === selectedIndex && !isCorrect) {
       // Jawaban salah yang dipilih (merah kontras tinggi)
-      btn.classList.remove('border-slate-300', 'bg-slate-50');
-      UI_CLASSES.QUIZ_OPTION.INCORRECT.forEach(cls => btn.classList.add(cls));
+      btn.className = 'quiz-option-btn w-full p-4 text-left rounded-2xl border-2 border-rose-700 bg-rose-100 text-rose-950 font-bold text-sm flex items-center justify-between';
       if (icon) {
-        icon.classList.remove('opacity-0');
-        UI_CLASSES.QUIZ_ICON.INCORRECT.forEach(cls => icon.classList.add(cls));
+        icon.className = 'quiz-option-icon ti ti-x text-rose-800 text-xl opacity-100';
       }
     } else {
-      UI_CLASSES.QUIZ_OPTION.MUTED.forEach(cls => btn.classList.add(cls));
+      btn.classList.add('opacity-60');
     }
   });
 
-  // Tampilkan feedback banner dengan nilai poin dinamis menggunakan konstanta UI_CLASSES.QUIZ_FEEDBACK
+  // Tampilkan feedback banner dengan nilai poin dinamis
   quizFeedbackBanner.classList.remove('hidden');
-  UI_CLASSES.QUIZ_FEEDBACK.BASE.forEach(cls => quizFeedbackBanner.classList.add(cls));
-  UI_CLASSES.QUIZ_FEEDBACK.CORRECT_BANNER.forEach(cls => quizFeedbackBanner.classList.toggle(cls, isCorrect));
-  UI_CLASSES.QUIZ_FEEDBACK.INCORRECT_BANNER.forEach(cls => quizFeedbackBanner.classList.toggle(cls, !isCorrect));
-
-  quizFeedbackIcon.classList.remove('ti-circle-check', 'ti-alert-circle', 'text-emerald-800', 'text-rose-800');
-  quizFeedbackIcon.classList.add('text-2xl', 'mt-0.5');
   if (isCorrect) {
-    UI_CLASSES.QUIZ_FEEDBACK.CORRECT_ICON.forEach(cls => quizFeedbackIcon.classList.add(cls));
-    quizFeedbackTitle.textContent = `Jawaban Benar! (+${addedPoints} Poin)`;
+    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-emerald-300 bg-emerald-100 text-emerald-950 transition-all';
+    quizFeedbackIcon.className = 'ti ti-circle-check text-2xl text-emerald-800 mt-0.5';
+    quizFeedbackTitle.textContent = `Jawaban Benar! (+${Math.round(pointsPerQuestion)} Poin)`;
   } else {
-    UI_CLASSES.QUIZ_FEEDBACK.INCORRECT_ICON.forEach(cls => quizFeedbackIcon.classList.add(cls));
+    quizFeedbackBanner.className = 'p-4 rounded-2xl border border-rose-300 bg-rose-100 text-rose-950 transition-all';
+    quizFeedbackIcon.className = 'ti ti-alert-circle text-2xl text-rose-800 mt-0.5';
     quizFeedbackTitle.textContent = 'Jawaban Kurang Tepat';
   }
   quizFeedbackMessage.textContent = currentQ.explanation;
@@ -1179,10 +1286,10 @@ function showQuizResult() {
   const accuracy = Math.round((correctAnswersCount / totalQuestions) * 100);
   quizScorePercentage.textContent = `Tingkat Akurasi: ${accuracy}% (${correctAnswersCount} dari ${totalQuestions} soal benar)`;
 
-  // Cek & update Highscore menggunakan helper getStorage & setStorage secara seragam
-  const previousHighScore = Number(getStorage(STORAGE_KEYS.QUIZ_HIGHSCORE, 0)) || 0;
+  // Cek & update Highscore
+  const previousHighScore = Number(localStorage.getItem(STORAGE_KEYS.QUIZ_HIGHSCORE)) || 0;
   if (quizScore > previousHighScore) {
-    setStorage(STORAGE_KEYS.QUIZ_HIGHSCORE, quizScore);
+    localStorage.setItem(STORAGE_KEYS.QUIZ_HIGHSCORE, String(quizScore));
     quizNewHighscoreBadge.classList.remove('hidden');
   } else {
     quizNewHighscoreBadge.classList.add('hidden');
@@ -1202,114 +1309,10 @@ function restartQuiz() {
 }
 
 // =============================================================================
-// 9. INITIALIZATION & EVENT LISTENERS
+// 8. INITIALIZATION & EVENT LISTENERS
 // =============================================================================
 
-
-/**
- * Inisialisasi referensi elemen DOM di dalam DOMContentLoaded
- * Memastikan script tidak bergantung pada posisi di akhir body (Best Practice)
- */
-function initDOMElements() {
-  // Modal Konfirmasi Hapus
-  modalConfirmDelete = document.getElementById('modal-confirm-delete');
-  confirmDeleteTitle = document.getElementById('confirm-delete-title');
-  confirmDeleteMessage = document.getElementById('confirm-delete-message');
-  btnCancelDelete = document.getElementById('btn-cancel-delete');
-  btnProceedDelete = document.getElementById('btn-proceed-delete');
-
-  // Expense Tracker
-  expenseForm = document.getElementById('expense-form');
-  expenseInputTitle = document.getElementById('expense-input-title');
-  expenseInputAmount = document.getElementById('expense-input-amount');
-  expenseInputCategory = document.getElementById('expense-input-category');
-  expenseInputDate = document.getElementById('expense-input-date');
-  expenseErrorTitle = document.getElementById('expense-error-title');
-  expenseErrorAmount = document.getElementById('expense-error-amount');
-  expenseErrorDate = document.getElementById('expense-error-date');
-
-  expenseBalanceDisplay = document.getElementById('expense-balance');
-  expenseTotalIncomeDisplay = document.getElementById('expense-total-income');
-  expenseTotalExpenseDisplay = document.getElementById('expense-total-expense');
-
-  expenseSearchInput = document.getElementById('expense-search');
-  expenseFilterType = document.getElementById('expense-filter-type');
-  expenseSortBy = document.getElementById('expense-sort-by');
-  expenseListContainer = document.getElementById('expense-list-container');
-  expenseEmptyState = document.getElementById('expense-empty-state');
-  expenseCounter = document.getElementById('expense-counter');
-  expenseBtnReset = document.getElementById('expense-btn-reset');
-
-  // Modal Edit Expense
-  modalEditExpense = document.getElementById('modal-edit-expense');
-  formEditExpense = document.getElementById('form-edit-expense');
-  editExpenseId = document.getElementById('edit-expense-id');
-  editExpenseTitle = document.getElementById('edit-expense-title');
-  editExpenseAmount = document.getElementById('edit-expense-amount');
-  editExpenseCategory = document.getElementById('edit-expense-category');
-  editExpenseDate = document.getElementById('edit-expense-date');
-  editExpenseErrorTitle = document.getElementById('edit-expense-error-title');
-  editExpenseErrorAmount = document.getElementById('edit-expense-error-amount');
-  editExpenseErrorDate = document.getElementById('edit-expense-error-date');
-  modalCloseEditExpense = document.getElementById('modal-close-edit-expense');
-  modalCancelEditExpense = document.getElementById('modal-cancel-edit-expense');
-
-  // Bookmark Manager
-  bookmarkForm = document.getElementById('bookmark-form');
-  bookmarkInputTitle = document.getElementById('bookmark-input-title');
-  bookmarkInputUrl = document.getElementById('bookmark-input-url');
-  bookmarkInputCategory = document.getElementById('bookmark-input-category');
-  bookmarkInputNote = document.getElementById('bookmark-input-note');
-  bookmarkErrorTitle = document.getElementById('bookmark-error-title');
-  bookmarkErrorUrl = document.getElementById('bookmark-error-url');
-
-  bookmarkSearchInput = document.getElementById('bookmark-search');
-  bookmarkSortBy = document.getElementById('bookmark-sort-by');
-  bookmarkGridContainer = document.getElementById('bookmark-grid-container');
-  bookmarkEmptyState = document.getElementById('bookmark-empty-state');
-  bookmarkCounter = document.getElementById('bookmark-counter');
-  bookmarkBtnReset = document.getElementById('bookmark-btn-reset');
-
-  // Modal Edit Bookmark
-  modalEditBookmark = document.getElementById('modal-edit-bookmark');
-  formEditBookmark = document.getElementById('form-edit-bookmark');
-  editBookmarkId = document.getElementById('edit-bookmark-id');
-  editBookmarkTitle = document.getElementById('edit-bookmark-title');
-  editBookmarkUrl = document.getElementById('edit-bookmark-url');
-  editBookmarkCategory = document.getElementById('edit-bookmark-category');
-  editBookmarkNote = document.getElementById('edit-bookmark-note');
-  editBookmarkErrorTitle = document.getElementById('edit-bookmark-error-title');
-  editBookmarkErrorUrl = document.getElementById('edit-bookmark-error-url');
-  modalCloseEditBookmark = document.getElementById('modal-close-edit-bookmark');
-  modalCancelEditBookmark = document.getElementById('modal-cancel-edit-bookmark');
-
-  // Quiz App
-  quizScreenStart = document.getElementById('quiz-screen-start');
-  quizScreenQuestion = document.getElementById('quiz-screen-question');
-  quizScreenResult = document.getElementById('quiz-screen-result');
-  quizTotalQuestionsStart = document.getElementById('quiz-total-questions-start');
-  quizHighscoreDisplay = document.getElementById('quiz-highscore-display');
-  quizBtnStart = document.getElementById('quiz-btn-start');
-  quizQuestionNumber = document.getElementById('quiz-question-number');
-  quizCurrentScoreTag = document.getElementById('quiz-current-score-tag');
-  quizProgressBar = document.getElementById('quiz-progress-bar');
-  quizQuestionText = document.getElementById('quiz-question-text');
-  quizOptionsContainer = document.getElementById('quiz-options-container');
-  quizFeedbackBanner = document.getElementById('quiz-feedback-banner');
-  quizFeedbackIcon = document.getElementById('quiz-feedback-icon');
-  quizFeedbackTitle = document.getElementById('quiz-feedback-title');
-  quizFeedbackMessage = document.getElementById('quiz-feedback-message');
-  quizBtnNext = document.getElementById('quiz-btn-next');
-  quizFinalScore = document.getElementById('quiz-final-score');
-  quizScorePercentage = document.getElementById('quiz-score-percentage');
-  quizNewHighscoreBadge = document.getElementById('quiz-new-highscore-badge');
-  quizBtnRestart = document.getElementById('quiz-btn-restart');
-}
-
 document.addEventListener('DOMContentLoaded', () => {
-  // 1. Inisialisasi seluruh referensi elemen DOM
-  initDOMElements();
-
   // Inisialisasi tanggal hari ini pada form Expense Tracker
   if (expenseInputDate) {
     expenseInputDate.value = getTodayDateString();
@@ -1367,12 +1370,6 @@ document.addEventListener('DOMContentLoaded', () => {
     expenseSortBy.addEventListener('change', renderExpenses);
   }
 
-  // Tombol Reset Data Expense
-  const expenseBtnReset = document.getElementById('expense-btn-reset');
-  if (expenseBtnReset) {
-    expenseBtnReset.addEventListener('click', promptResetExpenses);
-  }
-
   // Event delegation untuk Edit & Delete Transaksi
   if (expenseListContainer) {
     expenseListContainer.addEventListener('click', (e) => {
@@ -1414,12 +1411,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (bookmarkSortBy) {
     bookmarkSortBy.addEventListener('change', renderBookmarks);
-  }
-
-  // Tombol Reset Data Bookmark
-  const bookmarkBtnReset = document.getElementById('bookmark-btn-reset');
-  if (bookmarkBtnReset) {
-    bookmarkBtnReset.addEventListener('click', promptResetBookmarks);
   }
 
   // Event delegation untuk Edit & Delete Bookmark
